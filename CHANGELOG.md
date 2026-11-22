@@ -7,7 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Sections are generated on the release PR from the merged pull requests; do not
 edit this file in an ordinary PR (CI fails). Put notes under `## Changelog` in
-your PR description.
+your PR description.## [0.47.1](https://github.com/KigHeart/ajentir/compare/v0.47.0...v0.47.1) - 2026-11-22
+
+### Added
+
+- *(rig-tui)* scroll half a page on PageUp and PageDown ([#3446](https://github.com/KigHeart/ajentir/pull/3446)) (by [gold-silver-copper](https://github.com/gold-silver-copper))
+
+### Other
+
+- *(rig-basics, rig-tools)* tighten system prompt, framing, and tool descriptions ([#3447](https://github.com/KigHeart/ajentir/pull/3447)) (by [gold-silver-copper](https://github.com/gold-silver-copper))
+
+### Contributors
+
+* [gold-silver-copper](https://github.com/gold-silver-copper)
+
 ## [0.47.0](https://github.com/0xPlaygrounds/rig/compare/v0.46.0...v0.47.0) - 2026-11-20
 
 ### Added
