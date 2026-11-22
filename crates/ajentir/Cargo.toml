@@ -1,0 +1,34 @@
+[package]
+name = "ajentir"
+version.workspace = true
+edition.workspace = true
+license = "MIT"
+readme = "README.md"
+description = "AJENTIR typed state and checkpoint substrate: typed channels, versioned schemas, reducers, deterministic update batches, frontier-aware checkpoints, and fork-with-edit provenance."
+repository = "https://github.com/KigHeart/ajentir"
+keywords = ["agents", "checkpoint", "state", "reducer", "durable-execution"]
+categories = ["data-structures", "database-implementations"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[lints]
+workspace = true
+
+[features]
+default = ["sqlite"]
+# Durable checkpointer backed by SQLite (bundled, so no system library is needed).
+sqlite = ["dep:rusqlite"]
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+# `float_roundtrip`: stored checkpoints are re-hashed on load, so every float must
+# parse back to exactly the bits that were hashed when it was written.
+serde_json = { workspace = true, features = ["float_roundtrip"] }
+sha2 = { workspace = true }
+thiserror = { workspace = true }
+rusqlite = { workspace = true, features = ["bundled"], optional = true }
+
+[dev-dependencies]
+assert_fs = { workspace = true }
