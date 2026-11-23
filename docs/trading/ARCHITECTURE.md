@@ -22,7 +22,7 @@ It is not a prompt-driven stock picker or a monolithic trading bot.
 ## Implemented market-data slice: aj-market-data
 
 - Validated instrument and source identifiers.
-- Exact non-negative fixed-point values; no floating-point ingestion.
+- Exact signed fixed-point prices and positive fixed-point sizes; no floating-point ingestion.
 - Normalized trade, quote and OHLCV candle observations with structural validation.
 - Explicit event-time and adapter receive-time timestamps.
 - Source-local sequence deduplication and deterministic event-time replay in an in-memory journal.
