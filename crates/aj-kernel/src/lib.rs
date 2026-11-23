@@ -1,5 +1,13 @@
 #![forbid(unsafe_code)]
-#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::panic))]
+#![cfg_attr(
+    test,
+    allow(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::indexing_slicing,
+        clippy::panic
+    )
+)]
 //! Deterministic BSP commit and recovery boundary.
 //!
 //! The kernel does not know about model providers, tools, async executors or graph
@@ -12,8 +20,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use aj_state::{
-    BatchError, Checkpoint, CheckpointError, Checkpointer, Digest, Frontier, FrontierTask,
-    Schema, StoreError, TaskId, TaskWrites, UpdateBatch,
+    BatchError, Checkpoint, CheckpointError, Checkpointer, Digest, Frontier, FrontierTask, Schema,
+    TaskId, TaskWrites, UpdateBatch,
 };
 use serde_json::Value;
 use thiserror::Error;
@@ -31,7 +39,9 @@ pub enum KernelError {
     #[error("recovery store returned output for task {0}, which is not in the frontier")]
     UnexpectedStoredResult(TaskId),
     /// The completion set does not exactly cover the frozen frontier.
-    #[error("completion set does not match frozen frontier: expected {expected}, received {received}")]
+    #[error(
+        "completion set does not match frozen frontier: expected {expected}, received {received}"
+    )]
     FrontierMismatch { expected: usize, received: usize },
     /// Task outputs could not be assembled into a deterministic batch.
     #[error(transparent)]
@@ -140,7 +150,10 @@ pub fn plan_recovery(
         }
     }
 
-    Ok(RecoveryPlan { completed_writes, pending_tasks })
+    Ok(RecoveryPlan {
+        completed_writes,
+        pending_tasks,
+    })
 }
 
 /// Validates and commits one complete BSP super-step.
@@ -160,8 +173,12 @@ pub fn commit_superstep(
     next_frontier: Frontier,
     metadata: std::collections::BTreeMap<String, Value>,
 ) -> Result<SuperStepCommit, KernelError> {
-    let expected: BTreeSet<TaskId> = checkpoint.frontier().tasks().iter()
-        .map(|task| task.id().clone()).collect();
+    let expected: BTreeSet<TaskId> = checkpoint
+        .frontier()
+        .tasks()
+        .iter()
+        .map(|task| task.id().clone())
+        .collect();
 
     let mut received = BTreeSet::new();
     for result in completed {
@@ -181,7 +198,10 @@ pub fn commit_superstep(
     let batch_digest = batch.digest();
     let next = checkpoint.advance(schema, &batch, next_frontier, metadata)?;
 
-    Ok(SuperStepCommit { checkpoint: next, batch_digest })
+    Ok(SuperStepCommit {
+        checkpoint: next,
+        batch_digest,
+    })
 }
 
 #[cfg(test)]
@@ -195,18 +215,26 @@ mod tests {
     fn schema() -> Schema {
         Schema::builder("kernel-test", 1)
             .channel("total", ValueType::Integer, ReducerKind::SumI64)
-            .build().unwrap()
+            .build()
+            .unwrap()
     }
 
     fn initial() -> Checkpoint {
-        let tasks = Frontier::plan(0, vec![
-            (NodeName::new("worker").unwrap(), json!({"n": 1})),
-            (NodeName::new("worker").unwrap(), json!({"n": 2})),
-        ]);
+        let tasks = Frontier::plan(
+            0,
+            vec![
+                (NodeName::new("worker").unwrap(), json!({"n": 1})),
+                (NodeName::new("worker").unwrap(), json!({"n": 2})),
+            ],
+        );
         Checkpoint::initial(
-            ThreadId::new("thread-1").unwrap(), &schema(), &UpdateBatch::empty(),
-            tasks, Default::default(),
-        ).unwrap()
+            ThreadId::new("thread-1").unwrap(),
+            &schema(),
+            &UpdateBatch::empty(),
+            tasks,
+            Default::default(),
+        )
+        .unwrap()
     }
 
     fn result_for(task: &FrontierTask) -> TaskWrites {
@@ -349,11 +377,9 @@ mod tests {
             let store = SqliteCheckpointer::open(&database).unwrap();
             store.put(&checkpoint).unwrap();
             let task = checkpoint.frontier().tasks().first().unwrap();
-            store.put_task_writes(
-                checkpoint.thread(),
-                &checkpoint.id(),
-                &result_for(task),
-            ).unwrap();
+            store
+                .put_task_writes(checkpoint.thread(), &checkpoint.id(), &result_for(task))
+                .unwrap();
         }
 
         let reopened = SqliteCheckpointer::open(&database).unwrap();
