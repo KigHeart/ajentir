@@ -20,6 +20,9 @@ pub enum DomainError {
     /// A currency code is not exactly three uppercase ASCII letters.
     #[error("currency code must be exactly three uppercase ASCII letters")]
     InvalidCurrency,
+    /// A portfolio's reporting currency differs from its exposure currency.
+    #[error("portfolio reporting and exposure currencies differ")]
+    CurrencyMismatch,
     /// A price or quantity must be greater than zero.
     #[error("{0} must be greater than zero")]
     MustBePositive(&'static str),
@@ -201,10 +204,7 @@ impl PortfolioSnapshot {
         positions: BTreeMap<InstrumentId, u64>, open_order_count: u64)
         -> Result<Self, DomainError> {
         if gross_exposure.currency != currency {
-            return Err(DomainError::InvalidIdentifier {
-                kind: "portfolio exposure currency",
-                value: gross_exposure.currency.code().to_owned(),
-            });
+            return Err(DomainError::CurrencyMismatch);
         }
         Ok(Self { currency, gross_exposure, positions, open_order_count })
     }
