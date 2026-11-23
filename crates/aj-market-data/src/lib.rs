@@ -65,10 +65,7 @@ macro_rules! validated_id {
                             || matches!(byte, b'-' | b'_' | b'.' | b':' | b'/')
                     });
                 if !valid {
-                    return Err(MarketDataError::InvalidIdentifier {
-                        kind: $kind,
-                        value,
-                    });
+                    return Err(MarketDataError::InvalidIdentifier { kind: $kind, value });
                 }
                 Ok(Self(value))
             }
@@ -487,10 +484,7 @@ pub struct ReplayWindow {
 
 impl ReplayWindow {
     /// Creates a non-empty replay window.
-    pub fn new(
-        start: TimestampNanos,
-        end: TimestampNanos,
-    ) -> Result<Self, MarketDataError> {
+    pub fn new(start: TimestampNanos, end: TimestampNanos) -> Result<Self, MarketDataError> {
         if start >= end {
             return Err(MarketDataError::InvalidInterval);
         }
@@ -624,12 +618,7 @@ mod tests {
         Fixed::new(value, scale).unwrap()
     }
 
-    fn trade_event(
-        source: &str,
-        sequence: u64,
-        event_time: u64,
-        received_at: u64,
-    ) -> MarketEvent {
+    fn trade_event(source: &str, sequence: u64, event_time: u64, received_at: u64) -> MarketEvent {
         MarketEvent::new(
             InstrumentId::new("NASDAQ/AAPL").unwrap(),
             SourceId::new(source).unwrap(),
@@ -722,8 +711,7 @@ mod tests {
         let mut journal = MarketJournal::new();
         journal.append(trade_event("feed-a", 2, 200, 300)).unwrap();
         journal.append(trade_event("feed-a", 1, 100, 350)).unwrap();
-        let window = ReplayWindow::new(TimestampNanos::new(100), TimestampNanos::new(300))
-            .unwrap();
+        let window = ReplayWindow::new(TimestampNanos::new(100), TimestampNanos::new(300)).unwrap();
         let replay = journal.replay(window);
         assert_eq!(replay.len(), 2);
         assert_eq!(replay[0].event_time().as_nanos(), 100);
@@ -749,8 +737,7 @@ mod tests {
         let mut journal = MarketJournal::new();
         journal.append(trade_event("feed-a", 1, 100, 100)).unwrap();
         journal.append(trade_event("feed-a", 2, 200, 200)).unwrap();
-        let window = ReplayWindow::new(TimestampNanos::new(100), TimestampNanos::new(200))
-            .unwrap();
+        let window = ReplayWindow::new(TimestampNanos::new(100), TimestampNanos::new(200)).unwrap();
         let instrument = InstrumentId::new("NASDAQ/AAPL").unwrap();
         let replay = journal.replay_instrument(&instrument, window);
         assert_eq!(replay.len(), 1);
