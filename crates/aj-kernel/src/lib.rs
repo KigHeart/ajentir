@@ -1,4 +1,13 @@
 #![forbid(unsafe_code)]
+#![cfg_attr(
+    test,
+    allow(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::indexing_slicing,
+        clippy::panic
+    )
+)]
 //! Deterministic bulk-synchronous-parallel super-step commit boundary.
 //!
 //! The kernel does not know about model providers, tools, async executors or graph
@@ -7,7 +16,11 @@
 //! and creates the next immutable checkpoint. Failure never mutates the input.
 
 use std::collections::BTreeSet;
-use aj_state::{BatchError, Checkpoint, CheckpointError, Digest, Frontier, Schema, TaskId, TaskWrites, UpdateBatch};
+
+use aj_state::{
+    BatchError, Checkpoint, CheckpointError, Digest, Frontier, Schema, TaskId, TaskWrites,
+    UpdateBatch,
+};
 use serde_json::Value;
 use thiserror::Error;
 
@@ -38,11 +51,15 @@ pub struct SuperStepCommit {
 impl SuperStepCommit {
     /// The immutable checkpoint produced by this super-step.
     #[must_use]
-    pub fn checkpoint(&self) -> &Checkpoint { &self.checkpoint }
+    pub fn checkpoint(&self) -> &Checkpoint {
+        &self.checkpoint
+    }
 
     /// The deterministic digest of all task writes committed in this step.
     #[must_use]
-    pub fn batch_digest(&self) -> &Digest { &self.batch_digest }
+    pub fn batch_digest(&self) -> &Digest {
+        &self.batch_digest
+    }
 }
 
 /// Validates and commits one complete BSP super-step.
@@ -62,21 +79,35 @@ pub fn commit_superstep(
     next_frontier: Frontier,
     metadata: std::collections::BTreeMap<String, Value>,
 ) -> Result<SuperStepCommit, KernelError> {
-    let expected: BTreeSet<TaskId> = checkpoint.frontier().tasks().iter()
-        .map(|task| task.id().clone()).collect();
+    let expected: BTreeSet<TaskId> = checkpoint
+        .frontier()
+        .tasks()
+        .iter()
+        .map(|task| task.id().clone())
+        .collect();
+
     let mut received = BTreeSet::new();
     for result in completed {
         if !received.insert(result.task().clone()) {
             return Err(KernelError::DuplicateResult(result.task().clone()));
         }
     }
+
     if expected != received {
-        return Err(KernelError::FrontierMismatch { expected: expected.len(), received: received.len() });
+        return Err(KernelError::FrontierMismatch {
+            expected: expected.len(),
+            received: received.len(),
+        });
     }
+
     let batch = UpdateBatch::from_task_writes(completed)?;
     let batch_digest = batch.digest();
     let next = checkpoint.advance(schema, &batch, next_frontier, metadata)?;
-    Ok(SuperStepCommit { checkpoint: next, batch_digest })
+
+    Ok(SuperStepCommit {
+        checkpoint: next,
+        batch_digest,
+    })
 }
 
 #[cfg(test)]
@@ -88,24 +119,40 @@ mod tests {
     fn schema() -> Schema {
         Schema::builder("kernel-test", 1)
             .channel("total", ValueType::Integer, ReducerKind::SumI64)
-            .build().unwrap()
+            .build()
+            .unwrap()
     }
 
     fn initial() -> Checkpoint {
-        let tasks = Frontier::plan(0, vec![
-            (NodeName::new("worker").unwrap(), json!({"n": 1})),
-            (NodeName::new("worker").unwrap(), json!({"n": 2})),
-        ]);
-        Checkpoint::initial(ThreadId::new("thread-1").unwrap(), &schema(),
-            &UpdateBatch::empty(), tasks, Default::default()).unwrap()
+        let tasks = Frontier::plan(
+            0,
+            vec![
+                (NodeName::new("worker").unwrap(), json!({"n": 1})),
+                (NodeName::new("worker").unwrap(), json!({"n": 2})),
+            ],
+        );
+        Checkpoint::initial(
+            ThreadId::new("thread-1").unwrap(),
+            &schema(),
+            &UpdateBatch::empty(),
+            tasks,
+            Default::default(),
+        )
+        .unwrap()
     }
 
     fn results(checkpoint: &Checkpoint) -> Vec<TaskWrites> {
-        checkpoint.frontier().tasks().iter().map(|task| {
-            TaskWrites::new(task.id().clone(), vec![
-                Update::named("total", task.input()["n"].clone()).unwrap()
-            ])
-        }).collect()
+        checkpoint
+            .frontier()
+            .tasks()
+            .iter()
+            .map(|task| {
+                TaskWrites::new(
+                    task.id().clone(),
+                    vec![Update::named("total", task.input()["n"].clone()).unwrap()],
+                )
+            })
+            .collect()
     }
 
     #[test]
@@ -114,8 +161,24 @@ mod tests {
         let forward = results(&first);
         let mut reverse = forward.clone();
         reverse.reverse();
-        let a = commit_superstep(&first, &schema(), &forward, Frontier::empty(), Default::default()).unwrap();
-        let b = commit_superstep(&first, &schema(), &reverse, Frontier::empty(), Default::default()).unwrap();
+
+        let a = commit_superstep(
+            &first,
+            &schema(),
+            &forward,
+            Frontier::empty(),
+            Default::default(),
+        )
+        .unwrap();
+        let b = commit_superstep(
+            &first,
+            &schema(),
+            &reverse,
+            Frontier::empty(),
+            Default::default(),
+        )
+        .unwrap();
+
         assert_eq!(a.checkpoint().id(), b.checkpoint().id());
         assert_eq!(a.batch_digest(), b.batch_digest());
         assert_eq!(a.checkpoint().state().value("total"), Some(&json!(3)));
@@ -125,10 +188,21 @@ mod tests {
     fn incomplete_frontier_is_rejected_without_changing_parent() {
         let first = initial();
         let mut completed = results(&first);
-        completed.pop();
+        let _removed = completed.pop();
         let before = first.clone();
-        let result = commit_superstep(&first, &schema(), &completed, Frontier::empty(), Default::default());
-        assert!(matches!(result, Err(KernelError::FrontierMismatch { .. })));
+
+        let result = commit_superstep(
+            &first,
+            &schema(),
+            &completed,
+            Frontier::empty(),
+            Default::default(),
+        );
+
+        assert!(matches!(
+            result,
+            Err(KernelError::FrontierMismatch { .. })
+        ));
         assert_eq!(first, before);
     }
 
@@ -137,7 +211,16 @@ mod tests {
         let first = initial();
         let mut completed = results(&first);
         completed.push(completed[0].clone());
-        assert!(matches!(commit_superstep(&first, &schema(), &completed,
-            Frontier::empty(), Default::default()), Err(KernelError::DuplicateResult(_))));
+
+        assert!(matches!(
+            commit_superstep(
+                &first,
+                &schema(),
+                &completed,
+                Frontier::empty(),
+                Default::default()
+            ),
+            Err(KernelError::DuplicateResult(_))
+        ));
     }
 }
