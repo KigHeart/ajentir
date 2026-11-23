@@ -294,4 +294,32 @@ mod tests {
             Err(KernelError::DuplicateResult(_))
         ));
     }
+    #[test]
+    fn sqlite_restart_recovers_completed_task_outputs() {
+        use aj_state::SqliteCheckpointer;
+        use assert_fs::TempDir;
+
+        let directory = TempDir::new().unwrap();
+        let database = directory.path().join("ajentir-recovery.sqlite");
+        let checkpoint = initial();
+
+        {
+            let store = SqliteCheckpointer::open(&database).unwrap();
+            store.put(&checkpoint).unwrap();
+            let task = checkpoint.frontier().tasks().first().unwrap();
+            store.put_task_writes(
+                checkpoint.thread(),
+                &checkpoint.id(),
+                &result_for(task),
+            ).unwrap();
+        }
+
+        let reopened = SqliteCheckpointer::open(&database).unwrap();
+        let plan = plan_recovery(&reopened, &checkpoint).unwrap();
+
+        assert_eq!(plan.completed_writes().len(), 1);
+        assert_eq!(plan.pending_tasks().len(), 1);
+        assert!(!plan.is_complete());
+    }
+
 }
