@@ -1,0 +1,15 @@
+[package]
+name = "aj-kernel"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Deterministic BSP commit kernel for AJENTIR."
+
+[dependencies]
+aj-state = { path = "../aj-state" }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true
