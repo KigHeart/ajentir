@@ -1,68 +1,18 @@
 //! Validated names and identifiers.
 //!
 //! Every identifier in AJENTIR is a distinct type so a thread id can never be
-//! passed where a channel name is expected. All of them share one validation
-//! rule — non-empty, at most 256 bytes, no control characters — and that rule is
-//! also enforced when they are deserialized, so persisted data cannot smuggle in
-//! a name the constructors would have refused.
+//! passed where a channel name is expected. The naming rule and the identifiers
+//! shared with other crates ([`ThreadId`], [`NodeName`]) come from `aj-core`; the
+//! names that only make sense for state (channels, writers, tasks, schemas) are
+//! defined here and apply the same rule, both on construction and when they are
+//! deserialized.
 
 use std::{borrow::Borrow, fmt, str::FromStr};
 
+use aj_core::validate_name;
 use serde::{Deserialize, Serialize};
 
-const MAX_NAME_BYTES: usize = 256;
-
-/// Why a name was rejected.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
-pub enum NameProblem {
-    /// The name was empty.
-    #[error("must not be empty")]
-    Empty,
-    /// The name was longer than 256 bytes.
-    #[error("must be at most 256 bytes")]
-    TooLong,
-    /// The name contained a control character.
-    #[error("must not contain control characters")]
-    ControlCharacter,
-}
-
-/// A name or identifier that failed validation.
-#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
-#[error("invalid {what}: {problem}")]
-pub struct NameError {
-    what: &'static str,
-    problem: NameProblem,
-}
-
-impl NameError {
-    /// What kind of name was being validated, e.g. `"channel name"`.
-    #[must_use]
-    pub fn what(&self) -> &'static str {
-        self.what
-    }
-
-    /// The rule the name broke.
-    #[must_use]
-    pub fn problem(&self) -> NameProblem {
-        self.problem
-    }
-}
-
-fn validate(what: &'static str, value: &str) -> Result<(), NameError> {
-    let problem = if value.is_empty() {
-        Some(NameProblem::Empty)
-    } else if value.len() > MAX_NAME_BYTES {
-        Some(NameProblem::TooLong)
-    } else if value.chars().any(char::is_control) {
-        Some(NameProblem::ControlCharacter)
-    } else {
-        None
-    };
-    match problem {
-        Some(problem) => Err(NameError { what, problem }),
-        None => Ok(()),
-    }
-}
+pub use aj_core::{NameError, NameProblem, NodeName, ThreadId};
 
 macro_rules! name_type {
     ($(#[$meta:meta])* $name:ident, $what:literal) => {
@@ -80,7 +30,7 @@ macro_rules! name_type {
             /// or contains a control character.
             pub fn new(value: impl Into<String>) -> Result<Self, NameError> {
                 let value = value.into();
-                validate($what, &value)?;
+                validate_name($what, &value)?;
                 Ok(Self(value))
             }
 
@@ -95,7 +45,7 @@ macro_rules! name_type {
             type Error = NameError;
 
             fn try_from(value: String) -> Result<Self, NameError> {
-                validate($what, &value)?;
+                validate_name($what, &value)?;
                 Ok(Self(value))
             }
         }
@@ -129,19 +79,8 @@ macro_rules! name_type {
 }
 
 name_type! {
-    /// Identifies one linear history of checkpoints. A thread is never branched;
-    /// forking copies a checkpoint into a new thread.
-    ThreadId, "thread id"
-}
-
-name_type! {
     /// Names one channel of a [`Schema`](crate::Schema).
     ChannelName, "channel name"
-}
-
-name_type! {
-    /// Names a unit of work (a node) that a frontier task will run.
-    NodeName, "node name"
 }
 
 name_type! {

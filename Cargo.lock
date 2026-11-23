@@ -55,6 +55,7 @@ dependencies = [
 name = "aj-state"
 version = "0.1.0"
 dependencies = [
+ "aj-core",
  "assert_fs",
  "rusqlite",
  "serde",
