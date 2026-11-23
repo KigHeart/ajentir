@@ -2,9 +2,20 @@
 name = "aj-core"
 version.workspace = true
 edition.workspace = true
-license = "MIT"
-description = "Core identities and primitive contracts for AJENTIR."
-repository = "https://github.com/KigHeart/ajentir"
+license.workspace = true
+repository.workspace = true
+description = "Validated identities and primitive contracts shared by every AJENTIR crate."
+readme = "README.md"
+
+[lib]
+name = "aj_core"
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
 
 [lints]
 workspace = true
