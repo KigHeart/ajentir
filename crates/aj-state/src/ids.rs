@@ -57,7 +57,7 @@ macro_rules! name_type {
         $(#[$meta])*
         #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
         #[serde(try_from = "String", into = "String")]
-        pub struct $name(Identifier);
+        pub struct $name(String);
 
         impl $name {
             #[doc = concat!("Validates and wraps a ", $what, ".")]
@@ -68,13 +68,14 @@ macro_rules! name_type {
             /// or contains a control character.
             pub fn new(value: impl Into<String>) -> Result<Self, NameError> {
                 Identifier::new(value, 256)
+                    .map(Identifier::into_string)
                     .map(Self)
                     .map_err(|error| NameError::from_identity($what, error))
             }
 
             /// The name as text.
             #[must_use]
-            pub fn as_str(&self) -> &str { self.0.as_str() }
+            pub fn as_str(&self) -> &str { &self.0 }
         }
 
         impl TryFrom<String> for $name {
@@ -83,7 +84,7 @@ macro_rules! name_type {
         }
 
         impl From<$name> for String {
-            fn from(value: $name) -> String { value.0.into_string() }
+            fn from(value: $name) -> String { value.0 }
         }
 
         impl FromStr for $name {
@@ -131,14 +132,14 @@ name_type! {
 impl TaskId {
     /// Wraps a string the crate itself produced (a hex digest).
     pub(crate) fn from_trusted(value: String) -> Self {
-        Self(Identifier::new(value, 256).expect("digest-derived task id is valid"))
+        Self(value)
     }
 }
 
 impl From<&TaskId> for WriterId {
     /// A task's writes are attributed to the task itself.
     fn from(task: &TaskId) -> Self {
-        Self(Identifier::new(task.as_str(), 256).expect("task id is already valid"))
+        Self(task.0.clone())
     }
 }
 
