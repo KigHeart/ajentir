@@ -376,6 +376,27 @@ mod tests {
         ));
     }
     #[test]
+    fn recovery_rejects_a_checkpoint_that_is_no_longer_the_thread_head() {
+        let checkpoint = initial();
+        let store = InMemoryCheckpointer::new();
+        store.put(&checkpoint).unwrap();
+
+        let committed = commit_superstep(
+            &checkpoint,
+            &schema(),
+            &results(&checkpoint),
+            Frontier::empty(),
+            Default::default(),
+        ).unwrap();
+        store.put(committed.checkpoint()).unwrap();
+
+        assert!(matches!(
+            plan_recovery(&store, &checkpoint),
+            Err(KernelError::NotCurrentHead(_))
+        ));
+    }
+
+    #[test]
     fn sqlite_restart_recovers_completed_task_outputs() {
         use aj_state::SqliteCheckpointer;
         use assert_fs::TempDir;
