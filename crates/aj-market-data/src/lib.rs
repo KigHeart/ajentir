@@ -85,21 +85,22 @@ macro_rules! validated_id {
 validated_id!(InstrumentId, "instrument", 96);
 validated_id!(SourceId, "source", 96);
 
-/// Exact non-negative decimal represented as coefficient × 10 to the power
-/// negative scale.
+/// Exact signed decimal represented as coefficient × 10 to the power
+/// negative scale. Signed values support markets where an instrument can trade
+/// at a negative price; sizes remain validated as strictly positive.
 ///
 /// Values compared together must have the same scale. This avoids implicit
 /// rounding and keeps all market-data arithmetic deterministic.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Fixed {
-    coefficient: u64,
+    coefficient: i64,
     scale: u8,
 }
 
 impl Fixed {
     /// Creates a fixed-point value. A coefficient of zero is allowed; fields
     /// requiring a positive value enforce that constraint separately.
-    pub fn new(coefficient: u64, scale: u8) -> Result<Self, MarketDataError> {
+    pub fn new(coefficient: i64, scale: u8) -> Result<Self, MarketDataError> {
         if scale > MAX_SCALE {
             return Err(MarketDataError::InvalidScale {
                 scale,
@@ -111,7 +112,7 @@ impl Fixed {
 
     /// Returns the integer coefficient.
     #[must_use]
-    pub fn coefficient(self) -> u64 {
+    pub fn coefficient(self) -> i64 {
         self.coefficient
     }
 
@@ -119,12 +120,6 @@ impl Fixed {
     #[must_use]
     pub fn scale(self) -> u8 {
         self.scale
-    }
-
-    /// Returns whether the value is strictly positive.
-    #[must_use]
-    pub fn is_positive(self) -> bool {
-        self.coefficient > 0
     }
 
     /// Compares values without rounding or implicit scale conversion.
@@ -163,7 +158,7 @@ impl TimestampNanos {
 }
 
 /// Positive duration in nanoseconds.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DurationNanos(u64);
 
 impl DurationNanos {
@@ -192,9 +187,6 @@ pub struct Trade {
 impl Trade {
     /// Creates a trade with strictly positive price and quantity.
     pub fn new(price: Fixed, quantity: Fixed) -> Result<Self, MarketDataError> {
-        if !price.is_positive() {
-            return Err(MarketDataError::MustBePositive("trade price"));
-        }
         if !quantity.is_positive() {
             return Err(MarketDataError::MustBePositive("trade quantity"));
         }
@@ -231,9 +223,6 @@ impl Quote {
         bid_size: Fixed,
         ask_size: Fixed,
     ) -> Result<Self, MarketDataError> {
-        if !bid_price.is_positive() || !ask_price.is_positive() {
-            return Err(MarketDataError::MustBePositive("quote price"));
-        }
         if !bid_size.is_positive() || !ask_size.is_positive() {
             return Err(MarketDataError::MustBePositive("quote size"));
         }
@@ -314,13 +303,6 @@ impl Candle {
         close: Fixed,
         volume: Fixed,
     ) -> Result<Self, MarketDataError> {
-        if !open.is_positive()
-            || !high.is_positive()
-            || !low.is_positive()
-            || !close.is_positive()
-        {
-            return Err(MarketDataError::MustBePositive("candle price"));
-        }
         if open.scale() != high.scale()
             || open.scale() != low.scale()
             || open.scale() != close.scale()
@@ -638,7 +620,7 @@ impl MarketJournal {
 mod tests {
     use super::*;
 
-    fn fixed(value: u64, scale: u8) -> Fixed {
+    fn fixed(value: i64, scale: u8) -> Fixed {
         Fixed::new(value, scale).unwrap()
     }
 
@@ -676,13 +658,11 @@ mod tests {
     }
 
     #[test]
-    fn rejects_zero_trade_price_or_quantity() {
+    fn accepts_negative_market_prices_but_requires_positive_quantity() {
+        let trade = Trade::new(fixed(-125, 2), fixed(1, 0)).unwrap();
+        assert_eq!(trade.price().coefficient(), -125);
         assert_eq!(
-            Trade::new(fixed(0, 2), fixed(1, 0)),
-            Err(MarketDataError::MustBePositive("trade price"))
-        );
-        assert_eq!(
-            Trade::new(fixed(1, 2), fixed(0, 0)),
+            Trade::new(fixed(125, 2), fixed(0, 0)),
             Err(MarketDataError::MustBePositive("trade quantity"))
         );
     }
