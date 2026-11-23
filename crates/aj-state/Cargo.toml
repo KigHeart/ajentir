@@ -1,0 +1,28 @@
+[package]
+name = "aj-state"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Typed state, deterministic reducers, schemas, and durable checkpoint substrate for AJENTIR."
+readme = "README.md"
+
+[lib]
+name = "aj_state"
+
+[features]
+default = ["sqlite"]
+sqlite = ["dep:rusqlite"]
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+thiserror = { workspace = true }
+rusqlite = { workspace = true, optional = true }
+
+[dev-dependencies]
+assert_fs = { workspace = true }
+
+[lints]
+workspace = true
