@@ -20,7 +20,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use aj_state::{
-    BatchError, Checkpoint, CheckpointError, Checkpointer, Digest, Frontier, FrontierTask, Schema,
+    BatchError, Checkpoint, CheckpointError, CheckpointId, Checkpointer, Digest, Frontier, FrontierTask, Schema,
     TaskId, TaskWrites, UpdateBatch,
 };
 use serde_json::Value;
@@ -38,6 +38,9 @@ pub enum KernelError {
     /// A stored task output does not belong to the checkpoint's frozen frontier.
     #[error("recovery store returned output for task {0}, which is not in the frontier")]
     UnexpectedStoredResult(TaskId),
+    /// Recovery was requested for a checkpoint that is no longer the thread head.
+    #[error("checkpoint {0} is no longer the current thread head")]
+    NotCurrentHead(CheckpointId),
     /// The completion set does not exactly cover the frozen frontier.
     #[error(
         "completion set does not match frozen frontier: expected {expected}, received {received}"
@@ -125,6 +128,14 @@ pub fn plan_recovery(
     checkpointer: &impl Checkpointer,
     checkpoint: &Checkpoint,
 ) -> Result<RecoveryPlan, KernelError> {
+    checkpoint.verify()?;
+    let head = checkpointer
+        .head(checkpoint.thread())
+        .map_err(|error| KernelError::Store(error.to_string()))?;
+    if head.as_ref().map(Checkpoint::id) != Some(checkpoint.id()) {
+        return Err(KernelError::NotCurrentHead(checkpoint.id()));
+    }
+
     let stored = checkpointer
         .task_writes(checkpoint.thread(), &checkpoint.id())
         .map_err(|error| KernelError::Store(error.to_string()))?;
