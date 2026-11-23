@@ -215,7 +215,12 @@ mod tests {
     }
 
     fn results(checkpoint: &Checkpoint) -> Vec<TaskWrites> {
-        checkpoint.frontier().tasks().iter().map(result_for).collect()
+        checkpoint
+            .frontier()
+            .tasks()
+            .iter()
+            .map(result_for)
+            .collect()
     }
 
     #[test]
@@ -225,8 +230,22 @@ mod tests {
         let mut reverse = forward.clone();
         reverse.reverse();
 
-        let a = commit_superstep(&first, &schema(), &forward, Frontier::empty(), Default::default()).unwrap();
-        let b = commit_superstep(&first, &schema(), &reverse, Frontier::empty(), Default::default()).unwrap();
+        let a = commit_superstep(
+            &first,
+            &schema(),
+            &forward,
+            Frontier::empty(),
+            Default::default(),
+        )
+        .unwrap();
+        let b = commit_superstep(
+            &first,
+            &schema(),
+            &reverse,
+            Frontier::empty(),
+            Default::default(),
+        )
+        .unwrap();
 
         assert_eq!(a.checkpoint().id(), b.checkpoint().id());
         assert_eq!(a.batch_digest(), b.batch_digest());
@@ -241,7 +260,9 @@ mod tests {
 
         let first_task = checkpoint.frontier().tasks().first().unwrap();
         let persisted = result_for(first_task);
-        store.put_task_writes(checkpoint.thread(), &checkpoint.id(), &persisted).unwrap();
+        store
+            .put_task_writes(checkpoint.thread(), &checkpoint.id(), &persisted)
+            .unwrap();
 
         let plan = plan_recovery(&store, &checkpoint).unwrap();
         assert_eq!(plan.completed_writes(), &[persisted]);
@@ -257,7 +278,9 @@ mod tests {
         store.put(&checkpoint).unwrap();
 
         for writes in results(&checkpoint) {
-            store.put_task_writes(checkpoint.thread(), &checkpoint.id(), &writes).unwrap();
+            store
+                .put_task_writes(checkpoint.thread(), &checkpoint.id(), &writes)
+                .unwrap();
         }
 
         let plan = plan_recovery(&store, &checkpoint).unwrap();
@@ -265,8 +288,13 @@ mod tests {
         assert!(plan.pending_tasks().is_empty());
 
         let commit = commit_superstep(
-            &checkpoint, &schema(), plan.completed_writes(), Frontier::empty(), Default::default(),
-        ).unwrap();
+            &checkpoint,
+            &schema(),
+            plan.completed_writes(),
+            Frontier::empty(),
+            Default::default(),
+        )
+        .unwrap();
         assert_eq!(commit.checkpoint().state().value("total"), Some(&json!(3)));
     }
 
@@ -277,7 +305,13 @@ mod tests {
         let _removed = completed.pop();
         let before = first.clone();
 
-        let result = commit_superstep(&first, &schema(), &completed, Frontier::empty(), Default::default());
+        let result = commit_superstep(
+            &first,
+            &schema(),
+            &completed,
+            Frontier::empty(),
+            Default::default(),
+        );
 
         assert!(matches!(result, Err(KernelError::FrontierMismatch { .. })));
         assert_eq!(first, before);
@@ -290,7 +324,13 @@ mod tests {
         completed.push(completed[0].clone());
 
         assert!(matches!(
-            commit_superstep(&first, &schema(), &completed, Frontier::empty(), Default::default()),
+            commit_superstep(
+                &first,
+                &schema(),
+                &completed,
+                Frontier::empty(),
+                Default::default()
+            ),
             Err(KernelError::DuplicateResult(_))
         ));
     }
