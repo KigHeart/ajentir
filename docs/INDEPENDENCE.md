@@ -30,7 +30,7 @@ aj-sim    -> aj-kernel + aj-state
 
 This is a small foundation, not yet the complete v0.2 tiered topology. The current source audit also identifies a follow-up design issue: `aj-core` defines primitive identifiers while `aj-state` defines its own related identifier types. Those boundaries need to be reconciled deliberately before more crates depend on them.
 
-## Preserved implementation
+## Preserved and implemented capabilities
 
 The active state/checkpoint substrate includes:
 
@@ -39,9 +39,12 @@ The active state/checkpoint substrate includes:
 - content-addressed checkpoints and frontier state;
 - in-memory and SQLite checkpointers;
 - schema migration and fork-with-edit behavior;
-- integrity and storage conformance tests.
+- integrity and storage conformance tests;
+- task-write records associated with a checkpoint, including duplicate/conflict detection and head/frontier validation through the `Checkpointer` contract.
 
-The active BSP kernel validates exact completion coverage of a frozen frontier, rejects duplicate results, builds deterministic task-write batches, and produces a new immutable checkpoint. It does not schedule or execute asynchronous tasks.
+The SQLite checkpointer persists task writes as well as checkpoints. This is a meaningful task-journal foundation: completed task outputs can be recorded before the super-step checkpoint is committed.
+
+The active BSP kernel validates exact completion coverage of a frozen frontier, rejects duplicate results, builds deterministic task-write batches, and produces a new immutable checkpoint. It does not schedule or execute asynchronous tasks, nor does it itself coordinate durable task-write recording with checkpoint commit.
 
 The active simulator enumerates bounded task-completion permutations and checks that they produce the same checkpoint. It is not a distributed-systems simulator, fault injector, or formal model checker.
 
@@ -49,17 +52,18 @@ The active simulator enumerates bounded task-completion permutations and checks 
 
 The following v0.2 capabilities remain separate implementation work:
 
-- task execution records and durable recovery of completed work;
-- effect intents/results and idempotency/reconciliation;
-- compare-and-swap commits, worker leases and fencing;
-- one storage contract for checkpoints, tasks and effects;
-- model/provider manifests and request journaling;
+- recovery orchestration that loads durable task writes, resumes only missing frontier tasks, and commits safely after restart;
+- durable model request/response journal and provider usage reconciliation;
+- effect intents/results, idempotency keys and unknown-outcome reconciliation;
+- compare-and-swap commit protocol across workers, worker leases and fencing epochs;
+- a unified storage contract for checkpoints, task records and effect records;
+- model/provider manifests and request construction;
 - tool registry, effect classification and dispatch;
 - context admission, compaction and model routing;
 - durable approvals, budgets and execution control;
 - fault-injection simulation and comparative evaluation.
 
-Checkpoint persistence alone does not establish exactly-once external effects, distributed commit safety, or crash recovery of task execution.
+Checkpoint persistence and task-write recording do not by themselves establish exactly-once external effects, distributed commit safety, or complete crash recovery of a running super-step.
 
 ## GitHub repository lineage
 
@@ -83,9 +87,11 @@ A successful CI run is the evidence for a pass. A configured workflow or a comma
 - [x] No Rig dependency or Rig re-export in the active package manifests and public crate roots inspected for this status update.
 - [x] AJENTIR state/checkpoint work retained.
 - [x] BSP kernel and deterministic simulator are active workspace members.
+- [x] Durable task-write recording exists in the state/checkpointer layer.
 - [ ] Shared primitive identity boundary reconciled between `aj-core` and `aj-state`.
 - [ ] Full active source tree audited for stale Rig imports, names and documentation.
+- [ ] Recovery orchestration and effect journal implemented.
+- [ ] Distributed CAS/lease/fencing protocol and fault-injection verification implemented.
 - [ ] GitHub fork-network metadata detached, if required for complete repository-level independence.
-- [ ] Task/effect journal, fenced commit protocol and fault-injection verification implemented.
 
 This status records the current code boundary. It does not claim the full runtime architecture is complete.
