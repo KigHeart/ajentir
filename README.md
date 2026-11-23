@@ -11,7 +11,7 @@ The active Cargo workspace is AJENTIR-owned. It does not use Rig as a runtime de
 | Crate | Responsibility | Current boundary |
 |---|---|---|
 | `aj-core` | Validated runtime identifiers and primitive types | Initial foundation |
-| `aj-state` | Typed channels, versioned schemas, reducers, deterministic updates, content-addressed checkpoints, SQLite persistence, migrations, and fork-with-edit | Implemented state substrate |
+| `aj-state` | Typed channels, versioned schemas, reducers, deterministic updates, content-addressed checkpoints, SQLite persistence, task-write recording, migrations, and fork-with-edit | Implemented state and partial task-journal substrate |
 | `aj-kernel` | Validates complete task results for a frozen frontier and creates deterministic next checkpoints | Synchronous BSP commit boundary; no scheduler |
 | `aj-sim` | Enumerates bounded task-completion permutations and checks checkpoint determinism | Determinism harness; no fault injection or distributed simulation |
 
@@ -26,7 +26,7 @@ aj-kernel -> aj-state
 aj-sim    -> aj-kernel + aj-state
 ```
 
-The dependency graph is intentionally small. The next architecture work is to reconcile shared primitive identities, then introduce task/effect journaling and storage contracts without turning the kernel into a provider-specific framework.
+The dependency graph is intentionally small. The next architecture work is to reconcile shared primitive identities, then complete the task/effect journal and storage contracts without turning the kernel into a provider-specific framework.
 
 ## Independence rule
 
