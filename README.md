@@ -12,6 +12,8 @@ This repository is now being reconstituted as an AJENTIR-owned Rust workspace. I
 |---|---|---|
 | `aj-core` | Validated runtime identifiers and primitive types | Initial foundation |
 | `aj-state` | Typed channels, versioned schemas, reducers, deterministic updates, checkpoints, SQLite persistence, migrations, and fork-with-edit | Implemented substrate; tests are included |
+| `aj-kernel` | Validates completed task sets and commits each BSP super-step through typed state/checkpoints | Initial deterministic commit boundary |
+| `aj-sim` | Bounded enumeration of task-completion orders to test schedule independence | Initial deterministic simulator harness |
 
 The P0 BSP kernel and simulator are being reintegrated against the richer `aj-state` API as the next implementation step. They are not represented as part of this workspace until their contracts are reconciled and the workspace builds cleanly.
 

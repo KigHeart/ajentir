@@ -1,0 +1,16 @@
+[package]
+name = "aj-sim"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Bounded deterministic execution-order simulator for AJENTIR."
+
+[dependencies]
+aj-kernel = { path = "../aj-kernel" }
+aj-state = { path = "../aj-state" }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true

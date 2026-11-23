@@ -3,6 +3,8 @@ resolver = "3"
 members = [
     "crates/aj-core",
     "crates/aj-state",
+    "crates/aj-kernel",
+    "crates/aj-sim",
 ]
 
 [workspace.package]

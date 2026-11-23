@@ -8,10 +8,12 @@ The repository's prior default branch was an upstream Rig snapshot. This branch 
 
 ## Workspace boundary
 
-The active Cargo workspace contains only:
+The active Cargo workspace contains only AJENTIR-owned packages:
 
 - `aj-core`
 - `aj-state`
+- `aj-kernel`
+- `aj-sim`
 
 The selected crates contain no Rig dependency or Rig re-export. The root manifest contains no inherited provider matrix, upstream workspace members, or Rig aliases.
 
@@ -25,7 +27,7 @@ The AJENTIR v0.2 architecture document and supplied PDF are retained as the desi
 
 This workspace is not yet the complete AJENTIR runtime. The P0 BSP kernel and simulator are not included as active workspace members in this first independence slice because their earlier implementation targets a smaller state API that is not the richer typed state/checkpoint API retained here. They must be reconciled rather than wired together through compatibility shims.
 
-The model interface, tool interface, durable scheduler, effect journal, approval/control plane, cost ledger, context admission, router, simulator, and evaluation harness remain implementation work.
+The model interface, tool interface, durable scheduler, effect journal, approval/control plane, cost ledger, context admission, router, and evaluation harness remain implementation work. The simulator currently checks bounded completion-order permutations; it is not yet a full fault-injection or distributed-systems simulator.
 
 ## Exit checks for this slice
 
