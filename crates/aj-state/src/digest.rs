@@ -57,13 +57,15 @@ impl Digest {
             return Err(DigestParseError::WrongLength { found: raw.len() });
         }
         let mut bytes = [0u8; 32];
-        for (index, (slot, pair)) in bytes.iter_mut().zip(raw.chunks_exact(2)).enumerate() {
+        let (pairs, remainder) = raw.as_chunks::<2>();
+        if !remainder.is_empty() {
+            return Err(DigestParseError::WrongLength { found: raw.len() });
+        }
+        for (index, (slot, pair)) in bytes.iter_mut().zip(pairs).enumerate() {
             let position = index * 2;
-            let (Some(&high), Some(&low)) = (pair.first(), pair.get(1)) else {
-                return Err(DigestParseError::NotHex { position });
-            };
-            let high = nibble(high).ok_or(DigestParseError::NotHex { position })?;
-            let low = nibble(low).ok_or(DigestParseError::NotHex {
+            let [high, low] = pair;
+            let high = nibble(*high).ok_or(DigestParseError::NotHex { position })?;
+            let low = nibble(*low).ok_or(DigestParseError::NotHex {
                 position: position + 1,
             })?;
             *slot = (high << 4) | low;
