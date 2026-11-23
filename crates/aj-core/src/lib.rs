@@ -82,7 +82,8 @@ impl fmt::Display for Identifier {
 }
 
 macro_rules! identifier_type {
-    ($name:ident, $maximum:expr) => {
+    ($name:ident, $maximum:expr, $documentation:literal) => {
+        #[doc = $documentation]
         #[derive(
             Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize
         )]
@@ -135,14 +136,10 @@ macro_rules! identifier_type {
     };
 }
 
-/// Identifies one durable runtime execution.
-identifier_type!(RunId, 256);
-/// Identifies one linear history of checkpoints.
-identifier_type!(ThreadId, 256);
-/// Identifies one logical node in a runtime graph.
-identifier_type!(NodeId, 256);
-/// Identifies one immutable checkpoint.
-identifier_type!(CheckpointId, 256);
+identifier_type!(RunId, 256, "Identifies one durable runtime execution.");
+identifier_type!(ThreadId, 256, "Identifies one linear history of checkpoints.");
+identifier_type!(NodeId, 256, "Identifies one logical node in a runtime graph.");
+identifier_type!(CheckpointId, 256, "Identifies one immutable checkpoint.");
 
 /// The zero-based BSP super-step number.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
