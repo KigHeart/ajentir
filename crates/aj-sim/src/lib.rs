@@ -127,7 +127,7 @@ mod tests {
         let report = verify_completion_order_independence(&checkpoint, &schema, &completed,
             &Frontier::empty(), &BTreeMap::new(), 6).unwrap();
         assert_eq!(report.permutations_checked(), 6);
-        assert_eq!(report.checkpoint().state().value("events"), Some(&json!(6)));
+        assert_eq!(report.checkpoint().state().value("total"), Some(&json!(6)));
     }
 
     #[test]

@@ -118,7 +118,7 @@ mod tests {
         let b = commit_superstep(&first, &schema(), &reverse, Frontier::empty(), Default::default()).unwrap();
         assert_eq!(a.checkpoint().id(), b.checkpoint().id());
         assert_eq!(a.batch_digest(), b.batch_digest());
-        assert_eq!(a.checkpoint().state().value("events"), Some(&json!(3)));
+        assert_eq!(a.checkpoint().state().value("total"), Some(&json!(3)));
     }
 
     #[test]
