@@ -1,18 +1,17 @@
-//! Validated names and identifiers.
+//! Validated state-domain names and identifiers.
 //!
-//! Every identifier in AJENTIR is a distinct type so a thread id can never be
-//! passed where a channel name is expected. All of them share one validation
-//! rule — non-empty, at most 256 bytes, no control characters — and that rule is
-//! also enforced when they are deserialized, so persisted data cannot smuggle in
-//! a name the constructors would have refused.
+//! The canonical runtime thread identity is owned by aj-core. State keeps
+//! distinct newtypes for concepts that are not interchangeable, while
+//! delegating their shared validation policy to aj_core::Identifier.
 
 use std::{borrow::Borrow, fmt, str::FromStr};
 
+use aj_core::{Identifier, IdentityError};
 use serde::{Deserialize, Serialize};
 
-const MAX_NAME_BYTES: usize = 256;
+pub use aj_core::{NodeId as NodeName, ThreadId};
 
-/// Why a name was rejected.
+/// Why a state-domain name was rejected.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 pub enum NameProblem {
     /// The name was empty.
@@ -26,7 +25,7 @@ pub enum NameProblem {
     ControlCharacter,
 }
 
-/// A name or identifier that failed validation.
+/// A state-domain name or identifier that failed validation.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("invalid {what}: {problem}")]
 pub struct NameError {
@@ -35,7 +34,7 @@ pub struct NameError {
 }
 
 impl NameError {
-    /// What kind of name was being validated, e.g. `"channel name"`.
+    /// What kind of name was being validated.
     #[must_use]
     pub fn what(&self) -> &'static str {
         self.what
@@ -46,21 +45,14 @@ impl NameError {
     pub fn problem(&self) -> NameProblem {
         self.problem
     }
-}
 
-fn validate(what: &'static str, value: &str) -> Result<(), NameError> {
-    let problem = if value.is_empty() {
-        Some(NameProblem::Empty)
-    } else if value.len() > MAX_NAME_BYTES {
-        Some(NameProblem::TooLong)
-    } else if value.chars().any(char::is_control) {
-        Some(NameProblem::ControlCharacter)
-    } else {
-        None
-    };
-    match problem {
-        Some(problem) => Err(NameError { what, problem }),
-        None => Ok(()),
+    fn from_identity(what: &'static str, error: IdentityError) -> Self {
+        let problem = match error {
+            IdentityError::Empty => NameProblem::Empty,
+            IdentityError::TooLong { .. } => NameProblem::TooLong,
+            IdentityError::ControlCharacter => NameProblem::ControlCharacter,
+        };
+        Self { what, problem }
     }
 }
 
@@ -76,12 +68,13 @@ macro_rules! name_type {
             ///
             /// # Errors
             ///
-            /// Returns [`NameError`] if the value is empty, longer than 256 bytes,
+            /// Returns NameError if the value is empty, longer than 256 bytes,
             /// or contains a control character.
             pub fn new(value: impl Into<String>) -> Result<Self, NameError> {
-                let value = value.into();
-                validate($what, &value)?;
-                Ok(Self(value))
+                Identifier::new(value, 256)
+                    .map(Identifier::into_string)
+                    .map(Self)
+                    .map_err(|error| NameError::from_identity($what, error))
             }
 
             /// The name as text.
@@ -93,10 +86,8 @@ macro_rules! name_type {
 
         impl TryFrom<String> for $name {
             type Error = NameError;
-
             fn try_from(value: String) -> Result<Self, NameError> {
-                validate($what, &value)?;
-                Ok(Self(value))
+                Self::new(value)
             }
         }
 
@@ -108,7 +99,6 @@ macro_rules! name_type {
 
         impl FromStr for $name {
             type Err = NameError;
-
             fn from_str(value: &str) -> Result<Self, NameError> {
                 Self::new(value)
             }
@@ -116,61 +106,47 @@ macro_rules! name_type {
 
         impl fmt::Display for $name {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                f.write_str(&self.0)
+                f.write_str(self.as_str())
             }
         }
 
         impl Borrow<str> for $name {
             fn borrow(&self) -> &str {
-                &self.0
+                self.as_str()
             }
         }
     };
 }
 
 name_type! {
-    /// Identifies one linear history of checkpoints. A thread is never branched;
-    /// forking copies a checkpoint into a new thread.
-    ThreadId, "thread id"
-}
-
-name_type! {
-    /// Names one channel of a [`Schema`](crate::Schema).
+    /// Names one channel of a Schema.
     ChannelName, "channel name"
 }
 
 name_type! {
-    /// Names a unit of work (a node) that a frontier task will run.
-    NodeName, "node name"
-}
-
-name_type! {
-    /// Identifies who produced a write. Writers order writes inside a batch, so
-    /// the id must be stable across retries and independent of scheduling.
+    /// Identifies who produced a write.
     WriterId, "writer id"
 }
 
 name_type! {
-    /// Identifies one task in a [`Frontier`](crate::Frontier).
+    /// Identifies one task in a Frontier.
     TaskId, "task id"
 }
 
 name_type! {
-    /// Names a [`Schema`](crate::Schema) independently of its version.
+    /// Names a Schema independently of its version.
     SchemaName, "schema name"
 }
 
 impl TaskId {
-    /// Wraps a string the crate itself produced (a hex digest), which is known to
-    /// satisfy the naming rule.
+    /// Wraps a string the crate itself produced (a hex digest).
     pub(crate) fn from_trusted(value: String) -> Self {
         Self(value)
     }
 }
 
 impl From<&TaskId> for WriterId {
-    /// A task's writes are attributed to the task itself. A valid task id is a
-    /// valid writer id because both share one naming rule.
+    /// A task's writes are attributed to the task itself.
     fn from(task: &TaskId) -> Self {
         Self(task.0.clone())
     }
@@ -189,9 +165,21 @@ mod tests {
 
     #[test]
     fn rejects_empty_long_and_control_names() {
-        assert_eq!(ThreadId::new("").unwrap_err().problem(), NameProblem::Empty);
+        assert_eq!(ThreadId::new("").unwrap_err(), IdentityError::Empty);
         assert_eq!(
-            ThreadId::new("x".repeat(257)).unwrap_err().problem(),
+            ThreadId::new("x".repeat(257)).unwrap_err(),
+            IdentityError::TooLong { maximum: 256 }
+        );
+        assert_eq!(
+            ThreadId::new("a\nb").unwrap_err(),
+            IdentityError::ControlCharacter
+        );
+        assert_eq!(
+            ChannelName::new("").unwrap_err().problem(),
+            NameProblem::Empty
+        );
+        assert_eq!(
+            ChannelName::new("x".repeat(257)).unwrap_err().problem(),
             NameProblem::TooLong
         );
         assert!(ThreadId::new("x".repeat(256)).is_ok());
@@ -207,6 +195,7 @@ mod tests {
         assert!(serde_json::from_str::<ThreadId>("\"ok\"").is_ok());
         assert!(serde_json::from_str::<ThreadId>("\"\"").is_err());
         assert!(serde_json::from_str::<ThreadId>("\"a\\u0000b\"").is_err());
+        assert!(serde_json::from_str::<ChannelName>("\"\"").is_err());
     }
 
     #[test]
