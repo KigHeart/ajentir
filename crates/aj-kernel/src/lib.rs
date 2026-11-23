@@ -389,5 +389,4 @@ mod tests {
         assert_eq!(plan.pending_tasks().len(), 1);
         assert!(!plan.is_complete());
     }
-
 }
