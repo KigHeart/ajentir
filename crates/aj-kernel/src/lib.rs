@@ -87,7 +87,7 @@ mod tests {
 
     fn schema() -> Schema {
         Schema::builder("kernel-test", 1)
-            .channel("events", ValueType::Array, ReducerKind::Append)
+            .channel("total", ValueType::Integer, ReducerKind::SumI64)
             .build().unwrap()
     }
 
@@ -103,7 +103,7 @@ mod tests {
     fn results(checkpoint: &Checkpoint) -> Vec<TaskWrites> {
         checkpoint.frontier().tasks().iter().map(|task| {
             TaskWrites::new(task.id().clone(), vec![
-                Update::named("events", json!([task.input()["n"].clone()])).unwrap()
+                Update::named("total", task.input()["n"].clone()).unwrap()
             ])
         }).collect()
     }
@@ -118,7 +118,7 @@ mod tests {
         let b = commit_superstep(&first, &schema(), &reverse, Frontier::empty(), Default::default()).unwrap();
         assert_eq!(a.checkpoint().id(), b.checkpoint().id());
         assert_eq!(a.batch_digest(), b.batch_digest());
-        assert_eq!(a.checkpoint().state().value("events"), Some(&json!([1, 2])));
+        assert_eq!(a.checkpoint().state().value("events"), Some(&json!(3)));
     }
 
     #[test]

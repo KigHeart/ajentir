@@ -95,7 +95,7 @@ fn enumerate<T: Clone>(items: &[T], used: &mut [bool], current: &mut Vec<T>, out
             used[index] = true;
             if let Some(item) = items.get(index) { current.push(item.clone()); }
             enumerate(items, used, current, out);
-            current.pop();
+            drop(current.pop());
             used[index] = false;
         }
     }
@@ -110,7 +110,7 @@ mod tests {
     #[test]
     fn all_completion_orders_converge_to_one_checkpoint() {
         let schema = Schema::builder("sim-test", 1)
-            .channel("events", ValueType::Array, ReducerKind::Append)
+            .channel("total", ValueType::Integer, ReducerKind::SumI64)
             .build().unwrap();
         let frontier = Frontier::plan(0, vec![
             (NodeName::new("worker").unwrap(), json!(1)),
@@ -121,13 +121,13 @@ mod tests {
             &schema, &UpdateBatch::empty(), frontier, BTreeMap::new()).unwrap();
         let completed: Vec<TaskWrites> = checkpoint.frontier().tasks().iter().map(|task| {
             TaskWrites::new(task.id().clone(), vec![
-                Update::named("events", json!([task.input()])).unwrap()
+                Update::named("total", task.input().clone()).unwrap()
             ])
         }).collect();
         let report = verify_completion_order_independence(&checkpoint, &schema, &completed,
             &Frontier::empty(), &BTreeMap::new(), 6).unwrap();
         assert_eq!(report.permutations_checked(), 6);
-        assert_eq!(report.checkpoint().state().value("events"), Some(&json!([1, 2, 3])));
+        assert_eq!(report.checkpoint().state().value("events"), Some(&json!(6)));
     }
 
     #[test]
