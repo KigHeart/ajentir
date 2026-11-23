@@ -1,0 +1,30 @@
+[package]
+name = "ajentir-run"
+version.workspace = true
+edition.workspace = true
+license = "MIT"
+readme = "README.md"
+description = "Durable driver for the AJENTIR agent loop: checkpoints the sans-IO AgentRun into ajentir state and journals model responses and tool results so an interrupted run resumes without repeating finished work."
+repository = "https://github.com/KigHeart/ajentir"
+keywords = ["agents", "durable-execution", "checkpoint", "resume"]
+categories = ["asynchronous", "data-structures"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[lints]
+workspace = true
+
+[dependencies]
+ajentir = { path = "../ajentir", version = "0.42.0", default-features = false }
+futures = { workspace = true }
+rig-core = { path = "../rig-core", version = "0.42.0", default-features = false }
+rig-run = { path = "../rig-run", version = "0.42.0" }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+ajentir = { path = "../ajentir", features = ["sqlite"] }
+assert_fs = { workspace = true }
