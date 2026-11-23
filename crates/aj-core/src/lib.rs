@@ -1,4 +1,13 @@
 #![forbid(unsafe_code)]
+#![cfg_attr(
+    test,
+    allow(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::indexing_slicing,
+        clippy::panic
+    )
+)]
 //! Shared, provider-independent identities and primitive contracts.
 //!
 //! This crate owns AJENTIR's canonical identifier validation and primitive
