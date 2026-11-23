@@ -20,8 +20,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use aj_state::{
-    BatchError, Checkpoint, CheckpointError, CheckpointId, Checkpointer, Digest, Frontier, FrontierTask, Schema,
-    TaskId, TaskWrites, UpdateBatch,
+    BatchError, Checkpoint, CheckpointError, CheckpointId, Checkpointer, Digest, Frontier,
+    FrontierTask, Schema, TaskId, TaskWrites, UpdateBatch,
 };
 use serde_json::Value;
 use thiserror::Error;
