@@ -6,5 +6,8 @@ license = "MIT"
 description = "Core identities and primitive contracts for AJENTIR."
 repository = "https://github.com/KigHeart/ajentir"
 
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+
 [lints]
 workspace = true
