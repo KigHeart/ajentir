@@ -14,6 +14,8 @@ The active Cargo workspace contains only AJENTIR-owned packages:
 - `aj-state`
 - `aj-kernel`
 - `aj-sim`
+- `aj-trading` (financial-domain types and pure pre-trade risk gate; no broker execution)
+- `aj-market-data` (validated observations, provenance and deterministic in-memory replay; no feed connectors or durable journal)
 
 The selected crates contain no Rig dependency or Rig re-export. The root manifest contains no inherited provider matrix, upstream workspace members, or Rig aliases.
 
@@ -25,7 +27,7 @@ The AJENTIR v0.2 architecture document and supplied PDF are retained as the desi
 
 ## Deliberately not claimed
 
-This workspace is not yet the complete AJENTIR runtime. The P0 BSP kernel and simulator are not included as active workspace members in this first independence slice because their earlier implementation targets a smaller state API that is not the richer typed state/checkpoint API retained here. They must be reconciled rather than wired together through compatibility shims.
+The P0 BSP kernel and bounded completion-order simulator are active workspace members and integrated against the retained typed state/checkpoint API. The `aj-trading` crate is the first domain application slice; it contains deterministic order/portfolio contracts and a pure risk gate, not a live trading system.
 
 The model interface, tool interface, durable scheduler, effect journal, approval/control plane, cost ledger, context admission, router, and evaluation harness remain implementation work. The simulator currently checks bounded completion-order permutations; it is not yet a full fault-injection or distributed-systems simulator.
 

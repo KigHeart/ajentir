@@ -1,25 +1,33 @@
 # AJENTIR
 
-**An independent Rust-native agent runtime.**
+**An independent Rust-native agent runtime and multi-agent systems foundation.**
 
-AJENTIR is being built as a durable, cost-aware, model-agnostic runtime for coordinating agents and their work. Its central execution abstraction is a bulk-synchronous-parallel (BSP) super-step: plan, admit, execute, barrier, merge, route, and commit.
+AJENTIR coordinates durable, cost-aware, model-agnostic agent work through a bulk-synchronous-parallel (BSP) super-step: plan, admit, execute, barrier, merge, route and commit.
 
-This repository is now being reconstituted as an AJENTIR-owned Rust workspace. It does not use Rig as a runtime dependency, public API, workspace member, compatibility layer, or implementation requirement.
+AJENTIR is independent. Rig is not a runtime dependency, public API, workspace member, compatibility layer or implementation requirement.
 
-## Current workspace
+## Active workspace
 
-| Crate | Responsibility | Status |
-|---|---|---|
-| `aj-core` | Validated runtime identifiers and primitive types | Initial foundation |
-| `aj-state` | Typed channels, versioned schemas, reducers, deterministic updates, checkpoints, SQLite persistence, migrations, and fork-with-edit | Implemented substrate; tests are included |
-| `aj-kernel` | Validates completed task sets and commits each BSP super-step through typed state/checkpoints | Initial deterministic commit boundary |
-| `aj-sim` | Bounded enumeration of task-completion orders to test schedule independence | Initial deterministic simulator harness |
+| Crate | Responsibility |
+|---|---|
+| aj-core | Validated runtime identities and primitive contracts |
+| aj-state | Typed channels, deterministic reducers, content-addressed checkpoints, SQLite persistence and fork-with-edit |
+| aj-kernel | Deterministic BSP frontier validation and atomic state/checkpoint commit |
+| aj-sim | Bounded completion-order determinism simulator |
+| aj-trading | Financial-domain contracts and pure pre-trade risk evaluation; no broker execution |
+| aj-market-data | Validated market observations, source provenance, freshness checks and deterministic in-memory replay |
 
-The P0 BSP kernel and simulator are being reintegrated against the richer `aj-state` API as the next implementation step. They are not represented as part of this workspace until their contracts are reconciled and the workspace builds cleanly.
+## AJENTIR Trading
+
+AJENTIR Trading is the first domain application built on the runtime. Its direction is multi-agent market research, hypothesis generation, strategy evaluation, portfolio analysis and independently controlled execution.
+
+The initial aj-trading crate contains validated whole-unit limit-order and portfolio types plus a deterministic pre-trade risk gate. It does not connect to brokers, submit orders, predict prices or claim profitability.
+
+See [Trading architecture](docs/trading/ARCHITECTURE.md).
 
 ## Independence rule
 
-A crate may depend only on AJENTIR-owned crates and explicitly selected general-purpose Rust dependencies. No Rig package, import, type alias, re-export, fork-specific adapter, or inherited workspace configuration is permitted.
+A crate may depend only on AJENTIR-owned crates and explicitly selected general-purpose Rust dependencies. No Rig package, import, type alias, re-export or inherited workspace configuration is permitted.
 
 ## Build and test
 
@@ -31,12 +39,13 @@ cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ```
 
-These commands are verification gates; consult CI for their actual status.
+These are verification gates; consult CI for their actual status.
 
 ## Architecture
 
 - [AJENTIR v0.2 architecture baseline](docs/architecture/AJENTIR-V0.2-BASELINE.md)
 - [Independence and implementation status](docs/INDEPENDENCE.md)
+- [Trading architecture](docs/trading/ARCHITECTURE.md)
 
 ## License
 
