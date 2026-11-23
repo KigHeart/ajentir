@@ -6,7 +6,7 @@
 
 use std::{borrow::Borrow, fmt, str::FromStr};
 
-use aj_core::{IdentityError, Identifier};
+use aj_core::{Identifier, IdentityError};
 use serde::{Deserialize, Serialize};
 
 pub use aj_core::ThreadId;
@@ -36,11 +36,15 @@ pub struct NameError {
 impl NameError {
     /// What kind of name was being validated.
     #[must_use]
-    pub fn what(&self) -> &'static str { self.what }
+    pub fn what(&self) -> &'static str {
+        self.what
+    }
 
     /// The rule the name broke.
     #[must_use]
-    pub fn problem(&self) -> NameProblem { self.problem }
+    pub fn problem(&self) -> NameProblem {
+        self.problem
+    }
 
     fn from_identity(what: &'static str, error: IdentityError) -> Self {
         let problem = match error {
@@ -75,21 +79,29 @@ macro_rules! name_type {
 
             /// The name as text.
             #[must_use]
-            pub fn as_str(&self) -> &str { &self.0 }
+            pub fn as_str(&self) -> &str {
+                &self.0
+            }
         }
 
         impl TryFrom<String> for $name {
             type Error = NameError;
-            fn try_from(value: String) -> Result<Self, NameError> { Self::new(value) }
+            fn try_from(value: String) -> Result<Self, NameError> {
+                Self::new(value)
+            }
         }
 
         impl From<$name> for String {
-            fn from(value: $name) -> String { value.0 }
+            fn from(value: $name) -> String {
+                value.0
+            }
         }
 
         impl FromStr for $name {
             type Err = NameError;
-            fn from_str(value: &str) -> Result<Self, NameError> { Self::new(value) }
+            fn from_str(value: &str) -> Result<Self, NameError> {
+                Self::new(value)
+            }
         }
 
         impl fmt::Display for $name {
@@ -99,7 +111,9 @@ macro_rules! name_type {
         }
 
         impl Borrow<str> for $name {
-            fn borrow(&self) -> &str { self.as_str() }
+            fn borrow(&self) -> &str {
+                self.as_str()
+            }
         }
     };
 }
@@ -157,12 +171,27 @@ mod tests {
     #[test]
     fn rejects_empty_long_and_control_names() {
         assert_eq!(ThreadId::new("").unwrap_err(), IdentityError::Empty);
-        assert_eq!(ThreadId::new("x".repeat(257)).unwrap_err(), IdentityError::TooLong { maximum: 256 });
-        assert_eq!(ThreadId::new("a\nb").unwrap_err(), IdentityError::ControlCharacter);
-        assert_eq!(ChannelName::new("").unwrap_err().problem(), NameProblem::Empty);
-        assert_eq!(ChannelName::new("x".repeat(257)).unwrap_err().problem(), NameProblem::TooLong);
+        assert_eq!(
+            ThreadId::new("x".repeat(257)).unwrap_err(),
+            IdentityError::TooLong { maximum: 256 }
+        );
+        assert_eq!(
+            ThreadId::new("a\nb").unwrap_err(),
+            IdentityError::ControlCharacter
+        );
+        assert_eq!(
+            ChannelName::new("").unwrap_err().problem(),
+            NameProblem::Empty
+        );
+        assert_eq!(
+            ChannelName::new("x".repeat(257)).unwrap_err().problem(),
+            NameProblem::TooLong
+        );
         assert!(ThreadId::new("x".repeat(256)).is_ok());
-        assert_eq!(ChannelName::new("a\nb").unwrap_err().problem(), NameProblem::ControlCharacter);
+        assert_eq!(
+            ChannelName::new("a\nb").unwrap_err().problem(),
+            NameProblem::ControlCharacter
+        );
         assert_eq!(ChannelName::new("").unwrap_err().what(), "channel name");
     }
 
