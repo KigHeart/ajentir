@@ -40,8 +40,8 @@ pub enum KernelError {
     #[error(transparent)]
     Checkpoint(#[from] CheckpointError),
     /// Persisted recovery data could not be loaded.
-    #[error(transparent)]
-    Store(#[from] StoreError),
+    #[error("could not load persisted recovery data: {0}")]
+    Store(String),
 }
 
 /// The durable result of one successfully committed super-step.
@@ -115,7 +115,9 @@ pub fn plan_recovery(
     checkpointer: &impl Checkpointer,
     checkpoint: &Checkpoint,
 ) -> Result<RecoveryPlan, KernelError> {
-    let stored = checkpointer.task_writes(checkpoint.thread(), &checkpoint.id())?;
+    let stored = checkpointer
+        .task_writes(checkpoint.thread(), &checkpoint.id())
+        .map_err(|error| KernelError::Store(error.to_string()))?;
     let mut completed = BTreeMap::new();
 
     for writes in stored {
