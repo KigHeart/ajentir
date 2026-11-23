@@ -15,6 +15,7 @@ The active Cargo workspace contains only AJENTIR-owned packages:
 - `aj-kernel`
 - `aj-sim`
 - `aj-trading` (financial-domain types and pure pre-trade risk gate; no broker execution)
+- `aj-market-data` (validated observations, provenance and deterministic in-memory replay; no feed connectors or durable journal)
 
 The selected crates contain no Rig dependency or Rig re-export. The root manifest contains no inherited provider matrix, upstream workspace members, or Rig aliases.
 

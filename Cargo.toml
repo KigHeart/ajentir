@@ -6,6 +6,7 @@ members = [
     "crates/aj-kernel",
     "crates/aj-sim",
     "crates/aj-trading",
+    "crates/aj-market-data",
 ]
 
 [workspace.package]

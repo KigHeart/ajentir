@@ -19,6 +19,17 @@ It is not a prompt-driven stock picker or a monolithic trading bot.
 7. **Execution adapters:** eventually connect broker APIs behind explicit permits, idempotency, durable effect intents and reconciliation.
 8. **Evaluation:** preserve decisions, orders, fills, fees and mark-to-market evidence. Report net returns, drawdown, benchmarks and uncertainty.
 
+## Implemented market-data slice: aj-market-data
+
+- Validated instrument and source identifiers.
+- Exact non-negative fixed-point values; no floating-point ingestion.
+- Normalized trade, quote and OHLCV candle observations with structural validation.
+- Explicit event-time and adapter receive-time timestamps.
+- Source-local sequence deduplication and deterministic event-time replay in an in-memory journal.
+- Caller-supplied freshness assessment; future-dated and stale events are distinguished.
+
+Not implemented: exchange/broker connectors, raw-message archive, durable journal, corporate-action normalization, order-book depth, cross-source consolidation, clock synchronization or automatic correction handling. The in-memory journal is a deterministic reference implementation, not durable storage.
+
 ## Implemented first slice: aj-trading
 
 - Validated currency, instrument, order and strategy identifiers.
@@ -31,7 +42,7 @@ Not implemented: feeds, alpha models, broker adapters, fractional quantities, de
 ## Implementation sequence
 
 - **T0 — Domain contracts:** complete initial crate; deterministic and side-effect free.
-- **T1 — Market data:** normalized events, timestamps, provenance, replay and stale-data detection.
+- **T1 — Market data:** initial normalized event contracts, timestamps, provenance, in-memory replay and freshness checks implemented; durable ingestion adapters and storage remain.
 - **T2 — Research and hypotheses:** independent agents, typed evidence and competing explanations in AJENTIR state.
 - **T3 — Strategy evaluation:** point-in-time datasets, walk-forward splits, realistic costs and reproducibility.
 - **T4 — Portfolio and risk:** exposure aggregation, regime invalidation and hard risk authority.

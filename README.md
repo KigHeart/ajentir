@@ -15,6 +15,7 @@ AJENTIR is independent. Rig is not a runtime dependency, public API, workspace m
 | aj-kernel | Deterministic BSP frontier validation and atomic state/checkpoint commit |
 | aj-sim | Bounded completion-order determinism simulator |
 | aj-trading | Financial-domain contracts and pure pre-trade risk evaluation; no broker execution |
+| aj-market-data | Validated market observations, source provenance, freshness checks and deterministic in-memory replay |
 
 ## AJENTIR Trading
 
