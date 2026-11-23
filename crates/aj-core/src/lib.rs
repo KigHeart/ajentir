@@ -100,7 +100,7 @@ mod tests {
     #[test]
     fn identifiers_reject_empty_control_and_oversized_values() {
         assert_eq!(NodeId::new(""), Err(IdentityError::Empty));
-        assert_eq!(NodeId::new("node\\n1"), Err(IdentityError::ControlCharacter));
+        assert_eq!(NodeId::new("node\n1"), Err(IdentityError::ControlCharacter));
         assert_eq!(
             NodeId::new("x".repeat(257)),
             Err(IdentityError::TooLong { maximum: 256 })
