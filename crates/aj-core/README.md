@@ -7,7 +7,7 @@ Tier 0 of the AJENTIR workspace: the vocabulary every other crate shares.
 | Item | Purpose |
 | --- | --- |
 | `validate_name`, `NameError`, `NameProblem`, `MAX_NAME_BYTES` | The single naming rule: non-empty, at most 256 bytes, no control characters. |
-| `RunId`, `ThreadId`, `NodeName`, `ToolCallId`, `MessageId` | Distinct identifier types, so one kind can never be passed for another. |
+| `RunId`, `ThreadId`, `NodeName`, `ToolCallId`, `MessageId`, `ModelId`, `ProviderId` | Distinct identifier types, so one kind can never be passed for another. |
 | `SuperStep` | The logical step counter of a run, with checked increment. |
 
 Every identifier is validated when built **and** when deserialized, so stored data

@@ -107,6 +107,16 @@ identifier! {
     MessageId, "message id"
 }
 
+identifier! {
+    /// Names a model as its provider knows it, for example `"claude-sonnet-5-5"`.
+    ModelId, "model id"
+}
+
+identifier! {
+    /// Names a model provider, for example `"anthropic"`.
+    ProviderId, "provider id"
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -123,12 +133,14 @@ mod tests {
 
     #[test]
     fn every_identifier_applies_the_shared_rule_and_names_itself() {
-        let cases: [(Result<String, NameError>, &str); 5] = [
+        let cases: [(Result<String, NameError>, &str); 7] = [
             (RunId::new("").map(String::from), "run id"),
             (ThreadId::new("").map(String::from), "thread id"),
             (NodeName::new("").map(String::from), "node name"),
             (ToolCallId::new("").map(String::from), "tool call id"),
             (MessageId::new("").map(String::from), "message id"),
+            (ModelId::new("").map(String::from), "model id"),
+            (ProviderId::new("").map(String::from), "provider id"),
         ];
         for (result, what) in cases {
             let error = result.unwrap_err();
