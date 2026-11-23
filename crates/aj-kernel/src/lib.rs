@@ -387,7 +387,8 @@ mod tests {
             &results(&checkpoint),
             Frontier::empty(),
             Default::default(),
-        ).unwrap();
+        )
+        .unwrap();
         store.put(committed.checkpoint()).unwrap();
 
         assert!(matches!(
@@ -422,3 +423,4 @@ mod tests {
         assert!(!plan.is_complete());
     }
 }
+
