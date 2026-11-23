@@ -2,39 +2,90 @@
 
 ## Decision
 
-AJENTIR is an independent Rust runtime. Rig is not its base framework, runtime dependency, public API, or required source of agent/model/tool abstractions.
+AJENTIR is an independent Rust runtime. Rig is not its base framework, runtime dependency, public API, compatibility layer, or required source of agent/model/tool abstractions.
 
-The repository's prior default branch was an upstream Rig snapshot. This branch replaces that inherited workspace tree with an AJENTIR-owned workspace while retaining the original branches as historical source material.
+The active default-branch Cargo workspace has been replaced with an AJENTIR-owned workspace. Earlier branches and commits are retained as historical source material and are not active workspace members.
 
-## Workspace boundary
+## Active workspace boundary
 
-The active Cargo workspace contains only AJENTIR-owned packages:
+The root `Cargo.toml` explicitly lists only these packages:
 
 - `aj-core`
 - `aj-state`
 - `aj-kernel`
 - `aj-sim`
 
-The selected crates contain no Rig dependency or Rig re-export. The root manifest contains no inherited provider matrix, upstream workspace members, or Rig aliases.
+The root manifest contains no inherited Rig workspace members, provider matrix, or Rig package aliases. The four active package manifests use AJENTIR-owned local dependencies and selected general-purpose Rust dependencies.
+
+The intended dependency direction is:
+
+```text
+aj-core
+
+aj-state
+
+aj-kernel -> aj-state
+aj-sim    -> aj-kernel + aj-state
+```
+
+This is a small foundation, not yet the complete v0.2 tiered topology. The current source audit also identifies a follow-up design issue: `aj-core` defines primitive identifiers while `aj-state` defines its own related identifier types. Those boundaries need to be reconciled deliberately before more crates depend on them.
 
 ## Preserved implementation
 
-The state/checkpoint substrate is retained with its schemas, typed channel handles, reducers, deterministic update batches, content-addressed checkpoints, in-memory and SQLite checkpointers, conformance tests, durability tests, migrations, and fork-with-edit behavior.
+The active state/checkpoint substrate includes:
 
-The AJENTIR v0.2 architecture document and supplied PDF are retained as the design baseline.
+- versioned schemas and typed channel handles;
+- deterministic update batches and reducers;
+- content-addressed checkpoints and frontier state;
+- in-memory and SQLite checkpointers;
+- schema migration and fork-with-edit behavior;
+- integrity and storage conformance tests.
 
-## Deliberately not claimed
+The active BSP kernel validates exact completion coverage of a frozen frontier, rejects duplicate results, builds deterministic task-write batches, and produces a new immutable checkpoint. It does not schedule or execute asynchronous tasks.
 
-This workspace is not yet the complete AJENTIR runtime. The P0 BSP kernel and simulator are not included as active workspace members in this first independence slice because their earlier implementation targets a smaller state API that is not the richer typed state/checkpoint API retained here. They must be reconciled rather than wired together through compatibility shims.
+The active simulator enumerates bounded task-completion permutations and checks that they produce the same checkpoint. It is not a distributed-systems simulator, fault injector, or formal model checker.
 
-The model interface, tool interface, durable scheduler, effect journal, approval/control plane, cost ledger, context admission, router, and evaluation harness remain implementation work. The simulator currently checks bounded completion-order permutations; it is not yet a full fault-injection or distributed-systems simulator.
+## Not implemented yet
 
-## Exit checks for this slice
+The following v0.2 capabilities remain separate implementation work:
 
-- The workspace is AJENTIR-owned and explicit.
-- No active workspace package depends on Rig.
-- No active public Rust API re-exports Rig types.
-- The state/checkpoint tests remain part of the workspace.
-- CI checks formatting, tests, and Clippy.
+- task execution records and durable recovery of completed work;
+- effect intents/results and idempotency/reconciliation;
+- compare-and-swap commits, worker leases and fencing;
+- one storage contract for checkpoints, tasks and effects;
+- model/provider manifests and request journaling;
+- tool registry, effect classification and dispatch;
+- context admission, compaction and model routing;
+- durable approvals, budgets and execution control;
+- fault-injection simulation and comparative evaluation.
 
-Passing these checks establishes an independent codebase foundation, not completion of the runtime architecture.
+Checkpoint persistence alone does not establish exactly-once external effects, distributed commit safety, or crash recovery of task execution.
+
+## GitHub repository lineage
+
+The code and active Cargo workspace are independent of Rig. The GitHub repository may still carry fork-network metadata from its earlier origin. That metadata is not changed by editing manifests or source files; detaching a repository from a fork network requires GitHub-side action/support. No historical branches or commits have been deleted to create the independent workspace.
+
+## Verification gates
+
+The active workspace must pass:
+
+```powershell
+cargo fmt --all -- --check
+cargo test --workspace --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+```
+
+A successful CI run is the evidence for a pass. A configured workflow or a command listed in documentation is not itself evidence that the check ran.
+
+## Independence exit criteria
+
+- [x] Active Cargo workspace contains only AJENTIR-owned packages.
+- [x] No Rig dependency or Rig re-export in the active package manifests and public crate roots inspected for this status update.
+- [x] AJENTIR state/checkpoint work retained.
+- [x] BSP kernel and deterministic simulator are active workspace members.
+- [ ] Shared primitive identity boundary reconciled between `aj-core` and `aj-state`.
+- [ ] Full active source tree audited for stale Rig imports, names and documentation.
+- [ ] GitHub fork-network metadata detached, if required for complete repository-level independence.
+- [ ] Task/effect journal, fenced commit protocol and fault-injection verification implemented.
+
+This status records the current code boundary. It does not claim the full runtime architecture is complete.
