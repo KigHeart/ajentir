@@ -31,7 +31,9 @@ pub enum KernelError {
     #[error("task {0} produced more than one completion result")]
     DuplicateResult(TaskId),
     /// The completion set does not exactly cover the checkpoint's frozen frontier.
-    #[error("completion set does not match frozen frontier: expected {expected}, received {received}")]
+    #[error(
+        "completion set does not match frozen frontier: expected {expected}, received {received}"
+    )]
     FrontierMismatch { expected: usize, received: usize },
     /// Task outputs could not be assembled into a deterministic batch.
     #[error(transparent)]
@@ -199,10 +201,7 @@ mod tests {
             Default::default(),
         );
 
-        assert!(matches!(
-            result,
-            Err(KernelError::FrontierMismatch { .. })
-        ));
+        assert!(matches!(result, Err(KernelError::FrontierMismatch { .. })));
         assert_eq!(first, before);
     }
 
