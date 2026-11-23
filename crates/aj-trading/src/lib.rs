@@ -44,11 +44,15 @@ impl Currency {
 
     /// Returns the currency code.
     #[must_use]
-    pub fn code(&self) -> &str { &self.0 }
+    pub fn code(&self) -> &str {
+        &self.0
+    }
 }
 
 impl fmt::Display for Currency {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { f.write_str(self.code()) }
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.code())
+    }
 }
 
 macro_rules! identifier {
@@ -60,9 +64,11 @@ macro_rules! identifier {
             #[doc = concat!("Creates a validated ", $kind, " identifier.")]
             pub fn new(value: impl Into<String>) -> Result<Self, DomainError> {
                 let value = value.into();
-                let valid = !value.is_empty() && value.len() <= $max
-                    && value.bytes().all(|b| b.is_ascii_alphanumeric()
-                        || matches!(b, b'-' | b'_' | b'.' | b':'));
+                let valid = !value.is_empty()
+                    && value.len() <= $max
+                    && value.bytes().all(|b| {
+                        b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b':')
+                    });
                 if !valid {
                     return Err(DomainError::InvalidIdentifier { kind: $kind, value });
                 }
@@ -70,7 +76,9 @@ macro_rules! identifier {
             }
             /// Returns the identifier text.
             #[must_use]
-            pub fn as_str(&self) -> &str { &self.0 }
+            pub fn as_str(&self) -> &str {
+                &self.0
+            }
         }
     };
 }
@@ -90,14 +98,21 @@ impl Money {
     /// Creates an amount in minor units (for example, cents).
     #[must_use]
     pub fn new(currency: Currency, minor_units: u64) -> Self {
-        Self { currency, minor_units }
+        Self {
+            currency,
+            minor_units,
+        }
     }
     /// Returns the currency.
     #[must_use]
-    pub fn currency(&self) -> &Currency { &self.currency }
+    pub fn currency(&self) -> &Currency {
+        &self.currency
+    }
     /// Returns the amount in minor units.
     #[must_use]
-    pub fn minor_units(&self) -> u64 { self.minor_units }
+    pub fn minor_units(&self) -> u64 {
+        self.minor_units
+    }
 }
 
 /// Price of one whole instrument unit in minor currency units.
@@ -110,15 +125,24 @@ pub struct Price {
 impl Price {
     /// Creates a strictly positive unit price.
     pub fn new(currency: Currency, minor_units_per_unit: u64) -> Result<Self, DomainError> {
-        if minor_units_per_unit == 0 { return Err(DomainError::MustBePositive("price")); }
-        Ok(Self { currency, minor_units_per_unit })
+        if minor_units_per_unit == 0 {
+            return Err(DomainError::MustBePositive("price"));
+        }
+        Ok(Self {
+            currency,
+            minor_units_per_unit,
+        })
     }
     /// Returns the price currency.
     #[must_use]
-    pub fn currency(&self) -> &Currency { &self.currency }
+    pub fn currency(&self) -> &Currency {
+        &self.currency
+    }
     /// Returns minor units per whole instrument unit.
     #[must_use]
-    pub fn minor_units_per_unit(&self) -> u64 { self.minor_units_per_unit }
+    pub fn minor_units_per_unit(&self) -> u64 {
+        self.minor_units_per_unit
+    }
 }
 
 /// Positive whole-unit order quantity.
@@ -128,12 +152,16 @@ pub struct Quantity(u64);
 impl Quantity {
     /// Creates a positive whole-unit quantity.
     pub fn new(units: u64) -> Result<Self, DomainError> {
-        if units == 0 { return Err(DomainError::MustBePositive("quantity")); }
+        if units == 0 {
+            return Err(DomainError::MustBePositive("quantity"));
+        }
         Ok(Self(units))
     }
     /// Returns the quantity in whole units.
     #[must_use]
-    pub fn units(self) -> u64 { self.0 }
+    pub fn units(self) -> u64 {
+        self.0
+    }
 }
 
 /// Direction of a proposed order.
@@ -159,32 +187,59 @@ pub struct OrderIntent {
 impl OrderIntent {
     /// Creates a limit-order proposal.
     #[must_use]
-    pub fn new(id: OrderId, strategy: StrategyId, instrument: InstrumentId,
-        side: OrderSide, quantity: Quantity, limit_price: Price) -> Self {
-        Self { id, strategy, instrument, side, quantity, limit_price }
+    pub fn new(
+        id: OrderId,
+        strategy: StrategyId,
+        instrument: InstrumentId,
+        side: OrderSide,
+        quantity: Quantity,
+        limit_price: Price,
+    ) -> Self {
+        Self {
+            id,
+            strategy,
+            instrument,
+            side,
+            quantity,
+            limit_price,
+        }
     }
     /// Returns the order ID.
     #[must_use]
-    pub fn id(&self) -> &OrderId { &self.id }
+    pub fn id(&self) -> &OrderId {
+        &self.id
+    }
     /// Returns the strategy ID.
     #[must_use]
-    pub fn strategy(&self) -> &StrategyId { &self.strategy }
+    pub fn strategy(&self) -> &StrategyId {
+        &self.strategy
+    }
     /// Returns the instrument ID.
     #[must_use]
-    pub fn instrument(&self) -> &InstrumentId { &self.instrument }
+    pub fn instrument(&self) -> &InstrumentId {
+        &self.instrument
+    }
     /// Returns the order side.
     #[must_use]
-    pub fn side(&self) -> OrderSide { self.side }
+    pub fn side(&self) -> OrderSide {
+        self.side
+    }
     /// Returns the whole-unit quantity.
     #[must_use]
-    pub fn quantity(&self) -> Quantity { self.quantity }
+    pub fn quantity(&self) -> Quantity {
+        self.quantity
+    }
     /// Returns the limit price.
     #[must_use]
-    pub fn limit_price(&self) -> &Price { &self.limit_price }
+    pub fn limit_price(&self) -> &Price {
+        &self.limit_price
+    }
     /// Computes exact notional with checked integer arithmetic.
     #[must_use]
     pub fn notional(&self) -> Option<Money> {
-        self.limit_price.minor_units_per_unit.checked_mul(self.quantity.units())
+        self.limit_price
+            .minor_units_per_unit
+            .checked_mul(self.quantity.units())
             .map(|amount| Money::new(self.limit_price.currency.clone(), amount))
     }
 }
@@ -200,20 +255,32 @@ pub struct PortfolioSnapshot {
 
 impl PortfolioSnapshot {
     /// Creates a snapshot, rejecting a reporting/exposure currency mismatch.
-    pub fn new(currency: Currency, gross_exposure: Money,
-        positions: BTreeMap<InstrumentId, u64>, open_order_count: u64)
-        -> Result<Self, DomainError> {
+    pub fn new(
+        currency: Currency,
+        gross_exposure: Money,
+        positions: BTreeMap<InstrumentId, u64>,
+        open_order_count: u64,
+    ) -> Result<Self, DomainError> {
         if gross_exposure.currency != currency {
             return Err(DomainError::CurrencyMismatch);
         }
-        Ok(Self { currency, gross_exposure, positions, open_order_count })
+        Ok(Self {
+            currency,
+            gross_exposure,
+            positions,
+            open_order_count,
+        })
     }
     /// Returns the reporting currency.
     #[must_use]
-    pub fn currency(&self) -> &Currency { &self.currency }
+    pub fn currency(&self) -> &Currency {
+        &self.currency
+    }
     /// Returns current gross exposure.
     #[must_use]
-    pub fn gross_exposure(&self) -> &Money { &self.gross_exposure }
+    pub fn gross_exposure(&self) -> &Money {
+        &self.gross_exposure
+    }
     /// Returns the recorded long position, or zero.
     #[must_use]
     pub fn position(&self, instrument: &InstrumentId) -> u64 {
@@ -221,7 +288,9 @@ impl PortfolioSnapshot {
     }
     /// Returns the number of open orders.
     #[must_use]
-    pub fn open_order_count(&self) -> u64 { self.open_order_count }
+    pub fn open_order_count(&self) -> u64 {
+        self.open_order_count
+    }
 }
 
 /// Risk-policy construction errors.
@@ -242,12 +311,19 @@ pub struct RiskLimits {
 
 impl RiskLimits {
     /// Creates hard limits denominated in one currency.
-    pub fn new(max_order_notional: Money, max_gross_exposure: Money,
-        max_open_orders: u64) -> Result<Self, RiskPolicyError> {
+    pub fn new(
+        max_order_notional: Money,
+        max_gross_exposure: Money,
+        max_open_orders: u64,
+    ) -> Result<Self, RiskPolicyError> {
         if max_order_notional.currency() != max_gross_exposure.currency() {
             return Err(RiskPolicyError::CurrencyMismatch);
         }
-        Ok(Self { max_order_notional, max_gross_exposure, max_open_orders })
+        Ok(Self {
+            max_order_notional,
+            max_gross_exposure,
+            max_open_orders,
+        })
     }
 }
 
@@ -289,14 +365,18 @@ pub enum RiskDecision {
 /// Approval means only that the supplied snapshot satisfies these limits. It is
 /// not a broker permit, a buying-power guarantee or an investment recommendation.
 #[must_use]
-pub fn evaluate_order(order: &OrderIntent, portfolio: &PortfolioSnapshot,
-    limits: &RiskLimits) -> RiskDecision {
+pub fn evaluate_order(
+    order: &OrderIntent,
+    portfolio: &PortfolioSnapshot,
+    limits: &RiskLimits,
+) -> RiskDecision {
     let Some(notional) = order.notional() else {
         return RiskDecision::Rejected(RiskReason::ArithmeticOverflow);
     };
     if notional.currency() != portfolio.currency()
         || notional.currency() != limits.max_order_notional.currency()
-        || portfolio.gross_exposure().currency() != limits.max_gross_exposure.currency() {
+        || portfolio.gross_exposure().currency() != limits.max_gross_exposure.currency()
+    {
         return RiskDecision::Rejected(RiskReason::CurrencyMismatch);
     }
     if notional.minor_units() > limits.max_order_notional.minor_units() {
@@ -307,20 +387,25 @@ pub fn evaluate_order(order: &OrderIntent, portfolio: &PortfolioSnapshot,
     }
     if portfolio.open_order_count() >= limits.max_open_orders {
         return RiskDecision::Rejected(RiskReason::OpenOrderLimit {
-            current: portfolio.open_order_count(), maximum: limits.max_open_orders,
+            current: portfolio.open_order_count(),
+            maximum: limits.max_open_orders,
         });
     }
     let projected = match order.side() {
-        OrderSide::Buy => match portfolio.gross_exposure().minor_units()
-            .checked_add(notional.minor_units()) {
-                Some(value) => value,
-                None => return RiskDecision::Rejected(RiskReason::ArithmeticOverflow),
-            },
+        OrderSide::Buy => match portfolio
+            .gross_exposure()
+            .minor_units()
+            .checked_add(notional.minor_units())
+        {
+            Some(value) => value,
+            None => return RiskDecision::Rejected(RiskReason::ArithmeticOverflow),
+        },
         OrderSide::Sell => {
             let available = portfolio.position(order.instrument());
             if order.quantity().units() > available {
                 return RiskDecision::Rejected(RiskReason::InsufficientPosition {
-                    requested: order.quantity().units(), available,
+                    requested: order.quantity().units(),
+                    available,
                 });
             }
             if notional.minor_units() > portfolio.gross_exposure().minor_units() {
@@ -331,7 +416,8 @@ pub fn evaluate_order(order: &OrderIntent, portfolio: &PortfolioSnapshot,
     };
     if projected > limits.max_gross_exposure.minor_units() {
         return RiskDecision::Rejected(RiskReason::GrossExposureLimit {
-            projected, maximum: limits.max_gross_exposure.minor_units(),
+            projected,
+            maximum: limits.max_gross_exposure.minor_units(),
         });
     }
     RiskDecision::Approved {
@@ -344,67 +430,109 @@ pub fn evaluate_order(order: &OrderIntent, portfolio: &PortfolioSnapshot,
 mod tests {
     use super::*;
 
-    fn fixture(side: OrderSide, quantity: u64, position: u64)
-        -> (OrderIntent, PortfolioSnapshot, RiskLimits) {
+    fn fixture(
+        side: OrderSide,
+        quantity: u64,
+        position: u64,
+    ) -> (OrderIntent, PortfolioSnapshot, RiskLimits) {
         let currency = Currency::new("USD").unwrap();
         let instrument = InstrumentId::new("ACME").unwrap();
         let positions = BTreeMap::from([(instrument.clone(), position)]);
-        let portfolio = PortfolioSnapshot::new(currency.clone(),
-            Money::new(currency.clone(), 10_000), positions, 0).unwrap();
-        let order = OrderIntent::new(OrderId::new("order-1").unwrap(),
-            StrategyId::new("strategy-1").unwrap(), instrument, side,
-            Quantity::new(quantity).unwrap(), Price::new(currency.clone(), 100).unwrap());
-        let limits = RiskLimits::new(Money::new(currency.clone(), 5_000),
-            Money::new(currency, 12_000), 10).unwrap();
+        let portfolio = PortfolioSnapshot::new(
+            currency.clone(),
+            Money::new(currency.clone(), 10_000),
+            positions,
+            0,
+        )
+        .unwrap();
+        let order = OrderIntent::new(
+            OrderId::new("order-1").unwrap(),
+            StrategyId::new("strategy-1").unwrap(),
+            instrument,
+            side,
+            Quantity::new(quantity).unwrap(),
+            Price::new(currency.clone(), 100).unwrap(),
+        );
+        let limits = RiskLimits::new(
+            Money::new(currency.clone(), 5_000),
+            Money::new(currency, 12_000),
+            10,
+        )
+        .unwrap();
         (order, portfolio, limits)
     }
 
     #[test]
     fn approves_order_inside_limits() {
         let (order, portfolio, limits) = fixture(OrderSide::Buy, 10, 0);
-        assert!(matches!(evaluate_order(&order, &portfolio, &limits),
-            RiskDecision::Approved { .. }));
+        assert!(matches!(
+            evaluate_order(&order, &portfolio, &limits),
+            RiskDecision::Approved { .. }
+        ));
     }
 
     #[test]
     fn rejects_order_above_notional_limit() {
         let (order, portfolio, limits) = fixture(OrderSide::Buy, 51, 0);
-        assert!(matches!(evaluate_order(&order, &portfolio, &limits),
-            RiskDecision::Rejected(RiskReason::OrderNotionalLimit { .. })));
+        assert!(matches!(
+            evaluate_order(&order, &portfolio, &limits),
+            RiskDecision::Rejected(RiskReason::OrderNotionalLimit { .. })
+        ));
     }
 
     #[test]
     fn rejects_sell_that_would_create_a_short_position() {
         let (order, portfolio, limits) = fixture(OrderSide::Sell, 2, 1);
-        assert_eq!(evaluate_order(&order, &portfolio, &limits),
+        assert_eq!(
+            evaluate_order(&order, &portfolio, &limits),
             RiskDecision::Rejected(RiskReason::InsufficientPosition {
-                requested: 2, available: 1,
-            }));
+                requested: 2,
+                available: 1,
+            })
+        );
     }
 
     #[test]
     fn rejects_gross_exposure_breach() {
         let (order, mut portfolio, limits) = fixture(OrderSide::Buy, 30, 0);
         portfolio.gross_exposure = Money::new(Currency::new("USD").unwrap(), 10_000);
-        assert_eq!(evaluate_order(&order, &portfolio, &limits),
+        assert_eq!(
+            evaluate_order(&order, &portfolio, &limits),
             RiskDecision::Rejected(RiskReason::GrossExposureLimit {
-                projected: 13_000, maximum: 12_000,
-            }));
+                projected: 13_000,
+                maximum: 12_000,
+            })
+        );
     }
 
     #[test]
     fn rejects_notional_overflow() {
         let currency = Currency::new("USD").unwrap();
-        let order = OrderIntent::new(OrderId::new("overflow").unwrap(),
-            StrategyId::new("strategy").unwrap(), InstrumentId::new("ACME").unwrap(),
-            OrderSide::Buy, Quantity::new(u64::MAX).unwrap(),
-            Price::new(currency.clone(), 2).unwrap());
-        let portfolio = PortfolioSnapshot::new(currency.clone(),
-            Money::new(currency.clone(), 0), BTreeMap::new(), 0).unwrap();
-        let limits = RiskLimits::new(Money::new(currency.clone(), u64::MAX),
-            Money::new(currency, u64::MAX), 1).unwrap();
-        assert_eq!(evaluate_order(&order, &portfolio, &limits),
-            RiskDecision::Rejected(RiskReason::ArithmeticOverflow));
+        let order = OrderIntent::new(
+            OrderId::new("overflow").unwrap(),
+            StrategyId::new("strategy").unwrap(),
+            InstrumentId::new("ACME").unwrap(),
+            OrderSide::Buy,
+            Quantity::new(u64::MAX).unwrap(),
+            Price::new(currency.clone(), 2).unwrap(),
+        );
+        let portfolio = PortfolioSnapshot::new(
+            currency.clone(),
+            Money::new(currency.clone(), 0),
+            BTreeMap::new(),
+            0,
+        )
+        .unwrap();
+        let limits = RiskLimits::new(
+            Money::new(currency.clone(), u64::MAX),
+            Money::new(currency, u64::MAX),
+            1,
+        )
+        .unwrap();
+        assert_eq!(
+            evaluate_order(&order, &portfolio, &limits),
+            RiskDecision::Rejected(RiskReason::ArithmeticOverflow)
+        );
     }
 
     #[test]
