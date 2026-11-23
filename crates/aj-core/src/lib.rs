@@ -74,7 +74,9 @@ impl fmt::Display for Identifier {
 
 macro_rules! identifier_type {
     ($name:ident, $maximum:expr) => {
-        #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
+        #[derive(
+            Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize
+        )]
         #[serde(try_from = "String", into = "String")]
         pub struct $name(Identifier);
 
@@ -98,20 +100,28 @@ macro_rules! identifier_type {
 
         impl FromStr for $name {
             type Err = IdentityError;
-            fn from_str(value: &str) -> Result<Self, Self::Err> { Self::new(value) }
+            fn from_str(value: &str) -> Result<Self, Self::Err> {
+                Self::new(value)
+            }
         }
 
         impl TryFrom<String> for $name {
             type Error = IdentityError;
-            fn try_from(value: String) -> Result<Self, Self::Error> { Self::new(value) }
+            fn try_from(value: String) -> Result<Self, Self::Error> {
+                Self::new(value)
+            }
         }
 
         impl From<$name> for String {
-            fn from(value: $name) -> Self { value.0.into_string() }
+            fn from(value: $name) -> Self {
+                value.0.into_string()
+            }
         }
 
         impl Borrow<str> for $name {
-            fn borrow(&self) -> &str { self.as_str() }
+            fn borrow(&self) -> &str {
+                self.as_str()
+            }
         }
     };
 }
@@ -137,7 +147,10 @@ mod tests {
     fn identifiers_reject_empty_control_and_oversized_values() {
         assert_eq!(NodeId::new(""), Err(IdentityError::Empty));
         assert_eq!(NodeId::new("node\n1"), Err(IdentityError::ControlCharacter));
-        assert_eq!(NodeId::new("x".repeat(257)), Err(IdentityError::TooLong { maximum: 256 }));
+        assert_eq!(
+            NodeId::new("x".repeat(257)),
+            Err(IdentityError::TooLong { maximum: 256 })
+        );
     }
 
     #[test]
