@@ -9,5 +9,8 @@ repository = "https://github.com/KigHeart/ajentir"
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
 
+[dev-dependencies]
+serde_json = { workspace = true }
+
 [lints]
 workspace = true
