@@ -9,7 +9,7 @@ use std::{borrow::Borrow, fmt, str::FromStr};
 use aj_core::{Identifier, IdentityError};
 use serde::{Deserialize, Serialize};
 
-pub use aj_core::ThreadId;
+pub use aj_core::{NodeId as NodeName, ThreadId};
 
 /// Why a state-domain name was rejected.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
@@ -121,11 +121,6 @@ macro_rules! name_type {
 name_type! {
     /// Names one channel of a Schema.
     ChannelName, "channel name"
-}
-
-name_type! {
-    /// Names a unit of work (a node) that a frontier task will run.
-    NodeName, "node name"
 }
 
 name_type! {
